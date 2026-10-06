@@ -1,10 +1,13 @@
+
 import {
   ArrowRight,
   CalendarDays,
   Clock3,
-  Languages,
   ShieldCheck,
 } from "lucide-react";
+
+import drMunib from "../assets/dr-munib.jpg"; 
+import drNazli123 from "../assets/dr-nazli123.jpg";
 
 const doctors = [
   {
@@ -16,11 +19,10 @@ const doctors = [
     feePKR: "PKR 3,000",
     feeUSD: "$25",
     nextSlot: "Today • 04:00 PM",
-    image:
-      "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=900&q=85",
+    image: drMunib,
   },
   {
-    name: "Dr. Nazri",
+    name: "Dr. Nazli",
     specialty: "Medical Specialist",
     qualifications: "MBBS, FCPS",
     pmdc: "PMDC: XXXXX-N",
@@ -28,8 +30,7 @@ const doctors = [
     feePKR: "PKR 3,000",
     feeUSD: "$25",
     nextSlot: "Tomorrow • 11:00 AM",
-    image:
-      "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&w=900&q=85",
+    image: drNazli123,
   },
 ];
 
@@ -49,7 +50,7 @@ function Doctors() {
 
           <h2 className="mt-4 text-3xl font-bold text-[#183b3b] sm:text-4xl">
             Meet Our{" "}
-            <span className="text-[#2d7775]">Expert Doctors</span>
+            <span className="text-golden">Expert Doctors</span>
           </h2>
 
           <p className="mt-3 text-sm leading-7 text-slate-600 sm:text-base">
@@ -73,7 +74,6 @@ function Doctors() {
                 hover:shadow-xl
               "
             >
-
               {/* ================= IMAGE ================= */}
               <div className="relative h-[280px] overflow-hidden bg-[#e5f1ef]">
                 <img
@@ -140,22 +140,26 @@ function Doctors() {
                   </div>
 
                   {/* Languages */}
-                  <div className="col-span-2 flex items-center gap-3 rounded-xl bg-[#f6f9f8] p-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#e5f4f2] text-[#245b5b]">
-                      <Languages size={16} />
+                  <div className="col-span-2 flex items-center gap-3 rounded-2xl bg-[#f6f9f8] p-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center gap-0.5 rounded-full bg-[#e5f4f2] text-[#245b5b]">
+                      <span className="text-sm font-bold">A</span>
+                      <span className="text-base font-bold">ی</span>
                     </div>
 
                     <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                         Languages
                       </p>
 
-                      <p className="mt-0.5 text-sm font-semibold text-slate-700">
+                      <p className="mt-1 text-sm font-semibold text-slate-700">
                         {doctor.languages}
                       </p>
                     </div>
                   </div>
+
                 </div>
+                {/* END Small Information Cards */}
+
 
                 {/* Fee */}
                 <div className="mt-3 rounded-xl bg-gradient-to-r from-[#eef8f6] to-[#f4f6fb] p-3.5">
@@ -186,8 +190,10 @@ function Doctors() {
                         {doctor.feeUSD}
                       </p>
                     </div>
+
                   </div>
                 </div>
+
 
                 {/* Next Slot */}
                 <div className="mt-3 flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3.5">
@@ -205,6 +211,7 @@ function Doctors() {
                     </p>
                   </div>
                 </div>
+
 
                 {/* Buttons */}
                 <div className="mt-4 grid grid-cols-2 gap-2.5">
@@ -235,7 +242,6 @@ function Doctors() {
                       text-white
                       shadow-md
                       transition-all
-                      
                     "
                   >
                     <CalendarDays size={16} />
@@ -248,6 +254,7 @@ function Doctors() {
             </div>
           ))}
         </div>
+
       </div>
     </section>
   );

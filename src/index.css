@@ -29,3 +29,9 @@ body {
 .btn-light:hover {
   background-color: #eff6ff;
 }
+
+/* Global Golden Color */
+
+.text-highlight {
+  color: #F9A603;
+}

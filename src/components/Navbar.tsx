@@ -69,7 +69,7 @@ function Navbar() {
 
             <div className="leading-tight">
               <h1 className="text-xl font-bold text-slate-800">
-                MediCare
+                Telemedicine
               </h1>
 
               <p className="text-[11px] text-slate-500">
