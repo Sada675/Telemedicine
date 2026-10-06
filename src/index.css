@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+/* Global Button Colors */
+
+.btn-dark {
+  background-color: #0B63CE;
+  color: white;
+}
+
+.btn-dark:hover {
+  background-color: #0955AE;
+}
+
+.btn-light {
+  border-color: #0B63CE;
+  color: #0B63CE;
+}
+
+.btn-light:hover {
+  background-color: #eff6ff;
+}
