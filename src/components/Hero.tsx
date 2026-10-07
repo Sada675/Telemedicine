@@ -3,7 +3,7 @@ import { ArrowRight, CheckCircle } from "lucide-react";
 
 function Hero() {
   return (
-    <section className="bg-[#f8faf9] px-3 pt-20 pb-6 sm:px-6 sm:pt-24 sm:pb-10 lg:min-h-screen lg:px-10 lg:pt-28 lg:pb-20">
+    <section className="bg-[#f8faf9] px-3 pt-20 pb-6 sm:px-6 sm:pt-24 sm:pb-10 lg:px-10 lg:pt-28 lg:pb-10">
       <div
         className="
           relative mx-auto flex max-w-7xl items-center overflow-hidden
