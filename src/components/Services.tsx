@@ -1,3 +1,10 @@
+import service1 from "../assets/service-1.jpg";
+import service2 from "../assets/service-2.jpg";
+import service3 from "../assets/service-3.jpg";
+import service4 from "../assets/service-4.jpg";
+import service5 from "../assets/service-5.jpg";
+import service6 from "../assets/service-6.jpg";
+
 import {
   Activity,
   Droplets,
@@ -13,7 +20,7 @@ const services = [
     description:
       "Diagnosis and management of acid-base imbalances and related health conditions.",
     image:
-      "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=80",
+      service1,
     icon: Activity,
   },
   {
@@ -21,7 +28,7 @@ const services = [
     description:
       "Expert evaluation and management of sudden kidney function problems.",
     image:
-      "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?auto=format&fit=crop&w=800&q=80",
+      service2,
     icon: Scan,
   },
   {
@@ -29,7 +36,7 @@ const services = [
     description:
       "Specialized care and guidance for patients receiving peritoneal dialysis.",
     image:
-      "https://images.unsplash.com/photo-1638202993928-7d113b8a1b6f?auto=format&fit=crop&w=800&q=80",
+      service3,
     icon: Droplets,
   },
   {
@@ -37,7 +44,7 @@ const services = [
     description:
       "Comprehensive management and ongoing care for chronic kidney disease.",
     image:
-      "https://images.unsplash.com/photo-1584982751601-97dcc096659c?auto=format&fit=crop&w=800&q=80",
+      service4,
     icon: HeartPulse,
   },
   {
@@ -45,7 +52,7 @@ const services = [
     description:
       "Personalized diabetes care to help manage blood sugar and prevent complications.",
     image:
-      "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=800&q=80",
+      service5,
     icon: Stethoscope,
   },
   {
@@ -53,7 +60,7 @@ const services = [
     description:
       "Personalized consultation and guidance for maintaining better kidney health.",
     image:
-      "https://images.unsplash.com/photo-1538108149393-fbbd81895907?auto=format&fit=crop&w=800&q=80",
+      service6,
     icon: UserRoundCheck,
   },
 ];

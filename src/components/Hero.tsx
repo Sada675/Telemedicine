@@ -1,4 +1,5 @@
 
+import heroImage from "../assets/hero.jpg";
 import { ArrowRight, CheckCircle } from "lucide-react";
 
 function Hero() {
@@ -61,11 +62,11 @@ function Hero() {
             <div className="absolute bottom-0 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-white/10 blur-3xl" />
 
             <img
-              src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=700&q=85"
+              src={heroImage}
               alt="Professional doctor"
               className="
                 relative z-10
-                h-[300px] w-[280px]
+                h-[100px] w-[100px]
                 object-cover object-top
                 rounded-t-[140px]
                 rounded-b-[30px]

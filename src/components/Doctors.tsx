@@ -6,8 +6,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-import drMunib from "../assets/dr-munib.jpg"; 
-import drNazli123 from "../assets/dr-nazli123.jpg";
+import drMunib from "../assets/dr-munib121.jpg"; 
+import ladyDoc from "../assets/lady-doc.jpg";
 
 const doctors = [
   {
@@ -30,7 +30,7 @@ const doctors = [
     feePKR: "PKR 3,000",
     feeUSD: "$25",
     nextSlot: "Tomorrow • 11:00 AM",
-    image: drNazli123,
+    image: ladyDoc,
   },
 ];
 
@@ -80,7 +80,7 @@ function Doctors() {
                   src={doctor.image}
                   alt={doctor.name}
                   className="
-                    h-full w-full object-cover object-top
+                    h-120 w-full object-cover object-top
                     transition-transform duration-500
                     group-hover:scale-105
                   "
