@@ -1,6 +1,6 @@
 
 import {
-  ArrowRight,
+  
   CalendarDays,
   Clock3,
   ShieldCheck,
@@ -212,43 +212,29 @@ function Doctors() {
                   </div>
                 </div>
 
+{/* Book Appointment Button */}
+<div className="mt-4 flex justify-center">
+  <button
+    className="
+      inline-flex items-center justify-center
+      gap-2 rounded-full
+      btn-dark
+      px-7 py-3
+      text-sm font-semibold
+      text-white
+      shadow-md
+      transition-all
+      hover:-translate-y-0.5
+      hover:shadow-lg
+    "
+  >
+    <CalendarDays size={17} />
+    Book Appointment
+  </button>
+</div>
 
-                {/* Buttons */}
-                <div className="mt-4 grid grid-cols-2 gap-2.5">
 
-                  <button
-                    className="
-                      inline-flex items-center justify-center
-                      gap-1.5 rounded-full
-                      border border-[#245b5b]
-                      px-3 py-2.5
-                      text-sm font-semibold
-                      text-[#245b5b]
-                      transition-all
-                      btn-light
-                    "
-                  >
-                    View Details
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    className="
-                      inline-flex items-center justify-center
-                      gap-1.5 rounded-full
-                      btn-dark
-                      px-3 py-2.5
-                      text-sm font-semibold
-                      text-white
-                      shadow-md
-                      transition-all
-                    "
-                  >
-                    <CalendarDays size={16} />
-                    Book
-                  </button>
-
-                </div>
+                
 
               </div>
             </div>

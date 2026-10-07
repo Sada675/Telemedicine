@@ -5,7 +5,7 @@ import Services from "../components/Services";
 import HowItWorks from "../components/HowItWorks";
 import CustomerReviews from "../components/CustomerReviews";
 import FAQ from "../components/FAQ";
-// import Footer from "../components/Footer";
+import Footer from "../components/Footer";
 
 function Home() {
   return (
@@ -19,7 +19,7 @@ function Home() {
         <HowItWorks />
         <CustomerReviews />
         <FAQ />
-        {/* <Footer /> */}
+        <Footer />
       </main>
     </>
   );
