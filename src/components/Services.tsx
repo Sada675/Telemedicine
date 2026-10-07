@@ -67,13 +67,13 @@ const services = [
 
 function Services() {
   return (
-    <section id="services" className="bg-slate-50 py-20">
+    <section id="services" className="bg-[#f8faf9] px-4 pt-4 pb-16 sm:px-6 sm:pt-8 lg:px-10 lg:pt-10 lg:pb-20">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
 
         {/* Section Heading */}
         <div className="mx-auto mb-14 max-w-2xl text-center">
          <span className="inline-flex rounded-full bg-[#e5f4f2] px-4 py-2 text-sm font-semibold text-[#245b5b]">
-            Our Doctors
+            Our Services
           </span>
 
           <h2 className="text-3xl font-bold leading-tight text-slate-900 sm:text-4xl">

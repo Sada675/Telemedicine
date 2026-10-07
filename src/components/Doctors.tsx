@@ -38,7 +38,7 @@ function Doctors() {
   return (
     <section
       id="doctors"
-      className="bg-[#f8faf9] px-4 py-16 sm:px-6 lg:px-10 lg:py-20"
+      className="bg-[#f8faf9] px-4 pt-4 pb-16 sm:px-6 sm:pt-8 lg:px-10 lg:pt-0 lg:pb-10"
     >
       <div className="mx-auto max-w-6xl">
 
