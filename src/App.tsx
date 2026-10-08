@@ -6,6 +6,7 @@ import VerifyOTP from "./pages/VerifyOTP";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PatientDashboard from "./pages/PatientDashboard";
+import BookAppointment from "./pages/BookAppointment";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/patient-dashboard" element={<PatientDashboard />} />
+      <Route path="/book-appointment" element={<BookAppointment />} />
     </Routes>
   );
 }

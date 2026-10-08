@@ -1,47 +1,17 @@
 import { Link } from "react-router-dom";
 import BookAppointmentButton from "../components/BookAppointmentButton";
+import Footer from "../components/Footer";
 import {
-  Bell,
   CalendarDays,
   ChevronRight,
   Clock3,
   FileText,
-  Home,
-  LogOut,
   Stethoscope,
-  User,
-  X,
   Video,
 } from "lucide-react";
-import { useState } from "react";
 import Navbar from "../components/Navbar";
 
 function PatientDashboard() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const navItems = [
-    {
-      label: "Dashboard",
-      icon: Home,
-      to: "/patient-dashboard",
-    },
-    {
-      label: "Appointments",
-      icon: CalendarDays,
-      to: "/appointments",
-    },
-    {
-      label: "Prescriptions",
-      icon: FileText,
-      to: "/prescriptions",
-    },
-    {
-      label: "Profile",
-      icon: User,
-      to: "/profile",
-    },
-  ];
-
   const recentActivities = [
     {
       icon: FileText,
@@ -69,225 +39,34 @@ function PatientDashboard() {
     },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    window.location.href = "/";
-  };
-
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#f8faf9]">
 
       {/* =====================================================
-          COMMON PUBLIC NAVBAR
-          SAME NAVBAR AS HOME PAGE
+          COMMON NAVBAR
       ====================================================== */}
       <Navbar />
 
       {/* =====================================================
-          MOBILE SIDEBAR OVERLAY
-      ====================================================== */}
-      {sidebarOpen && (
-        <div
-          className="
-            fixed
-            inset-0
-            z-[40]
-            bg-black/40
-            lg:hidden
-          "
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* =====================================================
-          PATIENT SIDEBAR
-
-          Desktop:
-          Always visible
-
-          Mobile:
-          Hidden unless sidebarOpen becomes true.
-      ====================================================== */}
-      <aside
-        className={`
-          fixed
-          left-0
-          top-[76px]
-          z-[50]
-          flex
-          h-[calc(100vh-76px)]
-          w-72
-          flex-col
-          border-r
-          border-slate-200
-          bg-white
-          transition-transform
-          duration-300
-          lg:translate-x-0
-          ${
-            sidebarOpen
-              ? "translate-x-0"
-              : "-translate-x-full"
-          }
-        `}
-      >
-        {/* Sidebar Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
-          <div className="flex items-center gap-3">
-
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e5f4f2] text-[#245b5b]">
-              <Stethoscope size={21} />
-            </div>
-
-            <div>
-              <p className="text-base font-bold text-[#183b3b]">
-                Telemedicine
-              </p>
-
-              <p className="text-xs text-slate-400">
-                Patient Portal
-              </p>
-            </div>
-
-          </div>
-
-          {/* Sidebar close button ONLY */}
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(false)}
-            className="
-              rounded-lg
-              p-2
-              text-slate-400
-              transition
-              hover:bg-slate-100
-              lg:hidden
-            "
-            aria-label="Close dashboard sidebar"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 px-4 py-6">
-
-          <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Menu
-          </p>
-
-          <div className="space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <Link
-                  key={item.label}
-                  to={item.to}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`
-                    flex
-                    items-center
-                    gap-3
-                    rounded-xl
-                    px-4
-                    py-3
-                    text-sm
-                    font-medium
-                    no-underline
-                    transition
-                    ${
-                      item.label === "Dashboard"
-                        ? "btn-dark text-white shadow-sm"
-                        : "text-slate-600 hover:bg-slate-100 hover:text-[#183b3b]"
-                    }
-                  `}
-                >
-                  <Icon size={19} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-
-        </nav>
-
-        {/* User Card */}
-        <div className="border-t border-slate-100 p-4">
-
-          <div className="flex items-center gap-3 rounded-xl bg-[#f3f8f7] p-3">
-
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#536276] text-sm font-bold text-white">
-              SN
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-800">
-                Sadaye Noor
-              </p>
-
-              <p className="truncate text-xs text-slate-500">
-                Patient
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="
-                rounded-lg
-                p-2
-                text-slate-400
-                transition
-                hover:bg-white
-                hover:text-red-500
-              "
-              title="Logout"
-            >
-              <LogOut size={18} />
-            </button>
-
-          </div>
-
-        </div>
-      </aside>
-
-      {/* =====================================================
           MAIN CONTENT
-
-          Desktop:
-          sidebar = 288px
-
-          Mobile:
-          full width
       ====================================================== */}
-      <main className="w-full min-w-0 lg:ml-72 lg:w-[calc(100%-18rem)]">
+      <main className="w-full min-w-0">
 
         <div
-          className="
-            box-border
-            w-full
-            max-w-full
-            min-w-0
-            overflow-x-hidden
-            px-4
-            pb-8
-            pt-[96px]
-            sm:px-6
-            sm:pt-[96px]
-            lg:px-8
-            lg:pt-[96px]
-          "
-        >
+  className="
+    mx-auto
+    w-full
+    max-w-7xl
+    px-4
+    pb-8
+    pt-[96px]
+    sm:px-6
+    lg:px-8
+  "
+>
 
           {/* =================================================
               DASHBOARD TOP HEADER
-
-              IMPORTANT:
-              This is NOT another mobile navbar.
-
-              Navbar above = public navigation
-              This = dashboard greeting + notification
           ================================================== */}
           <div className="mb-6 flex w-full items-center justify-between gap-4">
 
@@ -303,45 +82,6 @@ function PatientDashboard() {
 
             </div>
 
-            {/* Notification */}
-            <button
-              type="button"
-              className="
-                relative
-                flex
-                h-11
-                w-11
-                shrink-0
-                items-center
-                justify-center
-                rounded-xl
-                bg-white
-                text-slate-500
-                shadow-sm
-                ring-1
-                ring-slate-100
-                transition
-                hover:bg-slate-50
-              "
-              aria-label="Notifications"
-            >
-              <Bell size={21} />
-
-              <span
-                className="
-                  absolute
-                  right-2
-                  top-2
-                  h-2.5
-                  w-2.5
-                  rounded-full
-                  bg-[#8b5e4a]
-                  ring-2
-                  ring-white
-                "
-              />
-            </button>
-
           </div>
 
           {/* =================================================
@@ -353,9 +93,9 @@ function PatientDashboard() {
               w-full
               overflow-hidden
               rounded-[26px]
-              bg-gradient-to-r 
-              from-[#410200] 
-              via-[#536276] 
+              bg-gradient-to-r
+              from-[#410200]
+              via-[#536276]
               to-[#151b54]
               p-6
               text-white
@@ -419,6 +159,7 @@ function PatientDashboard() {
               </p>
 
               <BookAppointmentButton />
+
             </div>
           </section>
 
@@ -654,6 +395,7 @@ function PatientDashboard() {
                   <div className="grid grid-cols-2 gap-3">
 
                     <div className="rounded-xl bg-[#f8faf9] px-4 py-3">
+
                       <p className="text-xs text-slate-400">
                         Date
                       </p>
@@ -661,9 +403,11 @@ function PatientDashboard() {
                       <p className="mt-1 text-sm font-semibold text-slate-700">
                         Oct 10, 2026
                       </p>
+
                     </div>
 
                     <div className="rounded-xl bg-[#f8faf9] px-4 py-3">
+
                       <p className="text-xs text-slate-400">
                         Time
                       </p>
@@ -671,6 +415,7 @@ function PatientDashboard() {
                       <p className="mt-1 text-sm font-semibold text-slate-700">
                         04:00 PM
                       </p>
+
                     </div>
 
                   </div>
@@ -692,7 +437,6 @@ function PatientDashboard() {
                       no-underline
                       shadow-sm
                       transition
-                      
                     "
                   >
                     <Video size={17} />
@@ -753,7 +497,6 @@ function PatientDashboard() {
                     text-white
                     no-underline
                     transition
-                    
                   "
                 >
                   Book a Consultation
@@ -869,6 +612,7 @@ function PatientDashboard() {
 
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

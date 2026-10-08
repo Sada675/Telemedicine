@@ -9,6 +9,7 @@ import {
   CalendarDays,
   FileText,
   LogOut,
+  Bell,
 } from "lucide-react";
 
 function Navbar() {
@@ -55,7 +56,7 @@ function Navbar() {
   }, [location.pathname]);
 
   // ----------------------------------
-  // Close mobile menu on larger screens
+  // Close mobile menu on desktop
   // ----------------------------------
   useEffect(() => {
     const handleResize = () => {
@@ -93,36 +94,34 @@ function Navbar() {
 
   return (
     <header
-  className="
-    fixed
-    inset-x-0
-    top-0
-    z-[100]
-    w-screen
-    max-w-none
-    bg-white/95
-    backdrop-blur-md
-    border-b
-    border-slate-100
-    shadow-[0_2px_12px_rgba(15,23,42,0.04)]
-  "
->
+      className="
+        fixed
+        inset-x-0
+        top-0
+        z-[100]
+        w-full
+        bg-white/95
+        backdrop-blur-md
+        border-b
+        border-slate-100
+        shadow-[0_2px_12px_rgba(15,23,42,0.04)]
+      "
+    >
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
 
-        {/* =================================
+        {/* =====================================================
             MAIN NAVBAR
-        ================================== */}
+        ====================================================== */}
         <div className="flex h-[76px] w-full items-center justify-between">
 
-          {/* =================================
+          {/* =================================================
               LOGO
-          ================================== */}
+          ================================================== */}
           <Link
             to="/"
             onClick={closeMenus}
             className="flex min-w-0 items-center gap-2.5"
           >
-            {/* Logo Icon */}
             <div
               className="
                 flex
@@ -141,7 +140,6 @@ function Navbar() {
               </span>
             </div>
 
-            {/* Logo Text */}
             <div className="min-w-0 leading-tight">
               <h1 className="truncate text-lg font-bold tracking-tight text-slate-800 sm:text-xl">
                 Telemedicine
@@ -153,12 +151,11 @@ function Navbar() {
             </div>
           </Link>
 
-          {/* =================================
+          {/* =================================================
               DESKTOP NAVIGATION
-          ================================== */}
+          ================================================== */}
           <nav className="hidden items-center gap-7 lg:flex">
 
-            {/* Home */}
             <Link
               to="/"
               onClick={closeMenus}
@@ -174,68 +171,43 @@ function Navbar() {
               Home
             </Link>
 
-            {/* Doctors */}
             <a
               href="/#doctors"
-              className="
-                text-sm
-                font-medium
-                text-slate-600
-                transition
-                hover:text-[#0B63CE]
-              "
+              className="text-sm font-medium text-slate-600 transition hover:text-[#0B63CE]"
             >
               Doctors
             </a>
 
-            {/* Services */}
             <a
               href="/#services"
-              className="
-                text-sm
-                font-medium
-                text-slate-600
-                transition
-                hover:text-[#0B63CE]
-              "
+              className="text-sm font-medium text-slate-600 transition hover:text-[#0B63CE]"
             >
               Services
             </a>
 
-            {/* How It Works */}
             <a
               href="/#how-it-works"
-              className="
-                text-sm
-                font-medium
-                text-slate-600
-                transition
-                hover:text-[#0B63CE]
-              "
+              className="text-sm font-medium text-slate-600 transition hover:text-[#0B63CE]"
             >
               How It Works
             </a>
 
-            {/* FAQ */}
             <a
               href="/#faq"
-              className="
-                text-sm
-                font-medium
-                text-slate-600
-                transition
-                hover:text-[#0B63CE]
-              "
+              className="text-sm font-medium text-slate-600 transition hover:text-[#0B63CE]"
             >
               FAQ
             </a>
           </nav>
 
-          {/* =================================
-              DESKTOP ACTIONS
-          ================================== */}
+          {/* =================================================
+              DESKTOP RIGHT SIDE
+          ================================================== */}
           <div className="hidden items-center gap-3 lg:flex">
 
+            {/* ===============================================
+                LOGGED OUT
+            ================================================ */}
             {!isLoggedIn ? (
               <>
                 {/* Phone */}
@@ -306,11 +278,470 @@ function Navbar() {
                 </Link>
               </>
             ) : (
-              /* =================================
-                 LOGGED-IN PROFILE
-              ================================== */
+              /* ===============================================
+                 LOGGED IN
+              ================================================= */
+              <>
+                {/* Phone */}
+                <button
+                  type="button"
+                  className="
+                    flex
+                    items-center
+                    gap-2
+                    rounded-lg
+                    border
+                    border-slate-200
+                    bg-white
+                    px-4
+                    py-2.5
+                    text-sm
+                    font-medium
+                    text-slate-700
+                    transition
+                    hover:border-[#0B63CE]
+                    hover:text-[#0B63CE]
+                  "
+                >
+                  <Phone size={16} />
+                  <span>+92 300 1234567</span>
+                </button>
+
+                {/* Book Appointment */}
+                <Link
+                  to="/book-appointment"
+                  onClick={closeMenus}
+                  className="
+                    rounded-lg
+                    bg-[#0B63CE]
+                    px-5
+                    py-2.5
+                    text-sm
+                    font-semibold
+                    text-white
+                    shadow-sm
+                    transition
+                    hover:bg-[#0955AE]
+                    hover:shadow-md
+                  "
+                >
+                  Book Appointment
+                </Link>
+
+                {/* =========================================
+                    NOTIFICATION
+                ========================================== */}
+                <button
+                  type="button"
+                  className="
+                    relative
+                    flex
+                    h-10
+                    w-10
+                    items-center
+                    justify-center
+                    rounded-full
+                    text-slate-600
+                    transition
+                    hover:bg-slate-100
+                    hover:text-[#0B63CE]
+                  "
+                  aria-label="Notifications"
+                >
+                  <Bell size={21} />
+
+                  {/* Notification Badge */}
+                  <span
+                    className="
+                      absolute
+                      -right-0.5
+                      -top-0.5
+                      flex
+                      h-[18px]
+                      min-w-[18px]
+                      items-center
+                      justify-center
+                      rounded-full
+                      bg-red-500
+                      px-1
+                      text-[10px]
+                      font-bold
+                      text-white
+                      ring-2
+                      ring-white
+                    "
+                  >
+                    3
+                  </span>
+                </button>
+
+                {/* =========================================
+                    PROFILE
+                ========================================== */}
+                <div
+                  ref={profileRef}
+                  className="relative"
+                >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setProfileOpen((prev) => !prev)
+                    }
+                    className="
+                      flex
+                      items-center
+                      gap-2
+                      rounded-xl
+                      px-2
+                      py-1.5
+                      transition
+                      hover:bg-slate-50
+                    "
+                    aria-label="Open profile menu"
+                    aria-expanded={profileOpen}
+                  >
+                    {/* Profile Picture */}
+                    <div
+                      className="
+                        flex
+                        h-10
+                        w-10
+                        items-center
+                        justify-center
+                        overflow-hidden
+                        rounded-full
+                        border-2
+                        border-white
+                        bg-[#e5f4f2]
+                        text-[#0B63CE]
+                        shadow-sm
+                        ring-1
+                        ring-slate-200
+                      "
+                    >
+                      <UserRound size={20} />
+                    </div>
+
+                    {/* Name */}
+                    <div className="hidden text-left xl:block">
+                      <p className="text-xs font-semibold leading-tight text-slate-800">
+                        Sadaye Noor
+                      </p>
+
+                      <p className="text-[10px] text-slate-500">
+                        Patient
+                      </p>
+                    </div>
+
+                    {/* Arrow */}
+                    <ChevronDown
+                      size={16}
+                      className={`
+                        text-slate-600
+                        transition-transform
+                        duration-200
+                        ${
+                          profileOpen
+                            ? "rotate-180"
+                            : ""
+                        }
+                      `}
+                    />
+                  </button>
+
+                  {/* =======================================
+                      PROFILE DROPDOWN
+                  ======================================== */}
+                  {profileOpen && (
+                    <div
+                      className="
+                        absolute
+                        right-0
+                        top-14
+                        z-[120]
+                        w-[285px]
+                        overflow-hidden
+                        rounded-2xl
+                        border
+                        border-slate-100
+                        bg-white
+                        shadow-[0_15px_40px_rgba(15,23,42,0.12)]
+                      "
+                    >
+                      {/* Profile Header */}
+                      <div className="border-b border-slate-100 px-5 py-4">
+                        <div className="flex items-center gap-3">
+
+                          <div
+                            className="
+                              flex
+                              h-11
+                              w-11
+                              items-center
+                              justify-center
+                              rounded-full
+                              bg-[#e5f4f2]
+                              text-[#0B63CE]
+                            "
+                          >
+                            <UserRound size={21} />
+                          </div>
+
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800">
+                              Sadaye Noor
+                            </p>
+
+                            <p className="mt-0.5 text-xs text-slate-500">
+                              Manage your healthcare
+                            </p>
+                          </div>
+
+                        </div>
+                      </div>
+
+                      {/* Profile Options */}
+                      <div className="p-2">
+
+                        {/* My Profile */}
+                        <Link
+                          to="/profile"
+                          onClick={() =>
+                            setProfileOpen(false)
+                          }
+                          className="
+                            flex
+                            items-center
+                            gap-3
+                            rounded-xl
+                            px-3
+                            py-3
+                            transition
+                            hover:bg-slate-50
+                          "
+                        >
+                          <div
+                            className="
+                              flex
+                              h-9
+                              w-9
+                              items-center
+                              justify-center
+                              rounded-lg
+                              bg-slate-100
+                              text-slate-600
+                            "
+                          >
+                            <UserRound size={17} />
+                          </div>
+
+                          <div>
+                            <p className="text-sm font-semibold text-slate-700">
+                              My Profile
+                            </p>
+
+                            <p className="text-xs text-slate-500">
+                              View and update your profile
+                            </p>
+                          </div>
+                        </Link>
+
+                        {/* Appointments */}
+                        <Link
+                          to="/appointments"
+                          onClick={() =>
+                            setProfileOpen(false)
+                          }
+                          className="
+                            flex
+                            items-center
+                            gap-3
+                            rounded-xl
+                            px-3
+                            py-3
+                            transition
+                            hover:bg-slate-50
+                          "
+                        >
+                          <div
+                            className="
+                              flex
+                              h-9
+                              w-9
+                              items-center
+                              justify-center
+                              rounded-lg
+                              bg-slate-100
+                              text-slate-600
+                            "
+                          >
+                            <CalendarDays size={17} />
+                          </div>
+
+                          <div>
+                            <p className="text-sm font-semibold text-slate-700">
+                              My Appointments
+                            </p>
+
+                            <p className="text-xs text-slate-500">
+                              Check your appointments
+                            </p>
+                          </div>
+                        </Link>
+
+                        {/* Prescriptions */}
+                        <Link
+                          to="/prescriptions"
+                          onClick={() =>
+                            setProfileOpen(false)
+                          }
+                          className="
+                            flex
+                            items-center
+                            gap-3
+                            rounded-xl
+                            px-3
+                            py-3
+                            transition
+                            hover:bg-slate-50
+                          "
+                        >
+                          <div
+                            className="
+                              flex
+                              h-9
+                              w-9
+                              items-center
+                              justify-center
+                              rounded-lg
+                              bg-slate-100
+                              text-slate-600
+                            "
+                          >
+                            <FileText size={17} />
+                          </div>
+
+                          <div>
+                            <p className="text-sm font-semibold text-slate-700">
+                              My Prescriptions
+                            </p>
+
+                            <p className="text-xs text-slate-500">
+                              View your prescriptions
+                            </p>
+                          </div>
+                        </Link>
+                      </div>
+
+                      {/* Logout */}
+                      <div className="border-t border-slate-100 p-2">
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          className="
+                            flex
+                            w-full
+                            items-center
+                            gap-3
+                            rounded-xl
+                            px-3
+                            py-3
+                            text-left
+                            transition
+                            hover:bg-red-50
+                          "
+                        >
+                          <div
+                            className="
+                              flex
+                              h-9
+                              w-9
+                              items-center
+                              justify-center
+                              rounded-lg
+                              bg-red-50
+                              text-red-500
+                            "
+                          >
+                            <LogOut size={17} />
+                          </div>
+
+                          <div>
+                            <p className="text-sm font-semibold text-red-600">
+                              Logout
+                            </p>
+
+                            <p className="text-xs text-slate-500">
+                              Sign out of your account
+                            </p>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* =================================================
+              MOBILE RIGHT SIDE
+          ================================================== */}
+          <div className="flex items-center gap-2 lg:hidden">
+
+            {/* Notification - only when logged in */}
+            {isLoggedIn && (
+              <button
+                type="button"
+                className="
+                  relative
+                  flex
+                  h-10
+                  w-10
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-full
+                  text-slate-600
+                  transition
+                  hover:bg-slate-100
+                  hover:text-[#0B63CE]
+                "
+                aria-label="Notifications"
+              >
+                <Bell size={21} />
+
+                <span
+                  className="
+                    absolute
+                    right-0
+                    top-0
+                    flex
+                    h-[17px]
+                    min-w-[17px]
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-red-500
+                    px-1
+                    text-[9px]
+                    font-bold
+                    text-white
+                    ring-2
+                    ring-white
+                  "
+                >
+                  3
+                </span>
+              </button>
+            )}
+
+            {/* =============================================
+                MOBILE PROFILE
+            ============================================== */}
+            {isLoggedIn && (
               <div
-                ref={profileRef}
+                ref={!profileOpen ? profileRef : undefined}
                 className="relative"
               >
                 <button
@@ -320,114 +751,74 @@ function Navbar() {
                   }
                   className="
                     flex
+                    min-w-[48px]
+                    flex-col
                     items-center
-                    gap-2
-                    rounded-full
-                    p-1.5
+                    justify-center
+                    rounded-lg
+                    px-1
+                    py-0.5
                     transition
                     hover:bg-slate-50
                   "
                   aria-label="Open profile menu"
                   aria-expanded={profileOpen}
                 >
-                  {/* Profile Picture */}
                   <div
                     className="
                       flex
-                      h-10
-                      w-10
+                      h-8
+                      w-8
                       items-center
                       justify-center
                       overflow-hidden
                       rounded-full
-                      border-2
-                      border-white
                       bg-[#e5f4f2]
                       text-[#0B63CE]
-                      shadow-sm
                       ring-1
                       ring-slate-200
                     "
                   >
-                    <UserRound size={20} />
+                    <UserRound size={17} />
                   </div>
 
-                  {/* Arrow */}
-                  <ChevronDown
-                    size={17}
-                    className={`
-                      text-slate-600
-                      transition-transform
-                      duration-200
-                      ${
-                        profileOpen
-                          ? "rotate-180"
-                          : ""
-                      }
-                    `}
-                  />
+                  <span className="mt-0.5 max-w-[72px] truncate text-[9px] font-semibold leading-tight text-slate-700">
+                    Sadaye Noor
+                  </span>
                 </button>
 
-                {/* =================================
-                    PROFILE DROPDOWN
-                ================================== */}
+                {/* Mobile profile dropdown */}
                 {profileOpen && (
                   <div
                     className="
                       absolute
                       right-0
-                      top-14
-                      z-[120]
-                      w-[285px]
+                      top-[60px]
+                      z-[130]
+                      w-[250px]
                       overflow-hidden
                       rounded-2xl
                       border
                       border-slate-100
                       bg-white
-                      shadow-[0_15px_40px_rgba(15,23,42,0.12)]
+                      shadow-[0_15px_40px_rgba(15,23,42,0.15)]
                     "
                   >
-                    {/* Profile Header */}
-                    <div className="border-b border-slate-100 px-5 py-4">
-                      <div className="flex items-center gap-3">
+                    <div className="border-b border-slate-100 px-4 py-3">
+                      <p className="text-sm font-semibold text-slate-800">
+                        Sadaye Noor
+                      </p>
 
-                        <div
-                          className="
-                            flex
-                            h-11
-                            w-11
-                            items-center
-                            justify-center
-                            rounded-full
-                            bg-[#e5f4f2]
-                            text-[#0B63CE]
-                          "
-                        >
-                          <UserRound size={21} />
-                        </div>
-
-                        <div>
-                          <p className="text-sm font-semibold text-slate-800">
-                            Your Account
-                          </p>
-
-                          <p className="mt-0.5 text-xs text-slate-500">
-                            Manage your healthcare
-                          </p>
-                        </div>
-
-                      </div>
+                      <p className="text-xs text-slate-500">
+                        Patient
+                      </p>
                     </div>
 
-                    {/* Profile Options */}
                     <div className="p-2">
 
-                      {/* My Profile */}
                       <Link
                         to="/profile"
-                        onClick={() =>
-                          setProfileOpen(false)
-                        }
+                        onClick={closeMenus}
                         className="
                           flex
                           items-center
@@ -435,42 +826,19 @@ function Navbar() {
                           rounded-xl
                           px-3
                           py-3
-                          transition
+                          text-sm
+                          font-medium
+                          text-slate-700
                           hover:bg-slate-50
                         "
                       >
-                        <div
-                          className="
-                            flex
-                            h-9
-                            w-9
-                            items-center
-                            justify-center
-                            rounded-lg
-                            bg-slate-100
-                            text-slate-600
-                          "
-                        >
-                          <UserRound size={17} />
-                        </div>
-
-                        <div>
-                          <p className="text-sm font-semibold text-slate-700">
-                            My Profile
-                          </p>
-
-                          <p className="text-xs text-slate-500">
-                            View and update your profile
-                          </p>
-                        </div>
+                        <UserRound size={18} />
+                        My Profile
                       </Link>
 
-                      {/* Appointments */}
                       <Link
                         to="/appointments"
-                        onClick={() =>
-                          setProfileOpen(false)
-                        }
+                        onClick={closeMenus}
                         className="
                           flex
                           items-center
@@ -478,42 +846,19 @@ function Navbar() {
                           rounded-xl
                           px-3
                           py-3
-                          transition
+                          text-sm
+                          font-medium
+                          text-slate-700
                           hover:bg-slate-50
                         "
                       >
-                        <div
-                          className="
-                            flex
-                            h-9
-                            w-9
-                            items-center
-                            justify-center
-                            rounded-lg
-                            bg-slate-100
-                            text-slate-600
-                          "
-                        >
-                          <CalendarDays size={17} />
-                        </div>
-
-                        <div>
-                          <p className="text-sm font-semibold text-slate-700">
-                            My Appointments
-                          </p>
-
-                          <p className="text-xs text-slate-500">
-                            Check your appointments
-                          </p>
-                        </div>
+                        <CalendarDays size={18} />
+                        My Appointments
                       </Link>
 
-                      {/* Prescriptions */}
                       <Link
                         to="/prescriptions"
-                        onClick={() =>
-                          setProfileOpen(false)
-                        }
+                        onClick={closeMenus}
                         className="
                           flex
                           items-center
@@ -521,43 +866,21 @@ function Navbar() {
                           rounded-xl
                           px-3
                           py-3
-                          transition
+                          text-sm
+                          font-medium
+                          text-slate-700
                           hover:bg-slate-50
                         "
                       >
-                        <div
-                          className="
-                            flex
-                            h-9
-                            w-9
-                            items-center
-                            justify-center
-                            rounded-lg
-                            bg-slate-100
-                            text-slate-600
-                          "
-                        >
-                          <FileText size={17} />
-                        </div>
-
-                        <div>
-                          <p className="text-sm font-semibold text-slate-700">
-                            My Prescriptions
-                          </p>
-
-                          <p className="text-xs text-slate-500">
-                            View your prescriptions
-                          </p>
-                        </div>
+                        <FileText size={18} />
+                        My Prescriptions
                       </Link>
-                    </div>
 
-                    {/* Logout */}
-                    <div className="border-t border-slate-100 p-2">
                       <button
                         type="button"
                         onClick={handleLogout}
                         className="
+                          mt-1
                           flex
                           w-full
                           items-center
@@ -566,91 +889,65 @@ function Navbar() {
                           px-3
                           py-3
                           text-left
-                          transition
+                          text-sm
+                          font-semibold
+                          text-red-600
                           hover:bg-red-50
                         "
                       >
-                        <div
-                          className="
-                            flex
-                            h-9
-                            w-9
-                            items-center
-                            justify-center
-                            rounded-lg
-                            bg-red-50
-                            text-red-500
-                          "
-                        >
-                          <LogOut size={17} />
-                        </div>
-
-                        <div>
-                          <p className="text-sm font-semibold text-red-600">
-                            Logout
-                          </p>
-
-                          <p className="text-xs text-slate-500">
-                            Sign out of your account
-                          </p>
-                        </div>
+                        <LogOut size={18} />
+                        Logout
                       </button>
+
                     </div>
                   </div>
                 )}
               </div>
             )}
-          </div>
 
-          {/* =================================
-              MOBILE HAMBURGER
-          ================================== */}
-          <button
-            type="button"
-            onClick={() => {
-              setMenuOpen((prev) => !prev);
-              setProfileOpen(false);
-            }}
-            className="
-              relative
-              z-[110]
-              flex
-              h-11
-              w-11
-              shrink-0
-              items-center
-              justify-center
-              rounded-lg
-              border
-              border-slate-200
-              bg-white
-              text-slate-700
-              shadow-sm
-              transition
-              hover:border-[#0B63CE]
-              hover:text-[#0B63CE]
-              lg:hidden
-            "
-            aria-label="Toggle navigation menu"
-            aria-expanded={menuOpen}
-          >
-            {menuOpen ? (
-              <X
-                size={25}
-                strokeWidth={2.5}
-              />
-            ) : (
-              <Menu
-                size={25}
-                strokeWidth={2.5}
-              />
-            )}
-          </button>
+            {/* =============================================
+                MOBILE HAMBURGER
+            ============================================== */}
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen((prev) => !prev);
+                setProfileOpen(false);
+              }}
+              className="
+                relative
+                z-[110]
+                flex
+                h-10
+                w-10
+                shrink-0
+                items-center
+                justify-center
+                rounded-lg
+                border
+                border-slate-200
+                bg-white
+                text-slate-700
+                shadow-sm
+                transition
+                hover:border-[#0B63CE]
+                hover:text-[#0B63CE]
+              "
+              aria-label="Toggle navigation menu"
+              aria-expanded={menuOpen}
+            >
+              {menuOpen ? (
+                <X size={23} strokeWidth={2.5} />
+              ) : (
+                <Menu size={23} strokeWidth={2.5} />
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* =================================
+        {/* =====================================================
             MOBILE MENU
-        ================================== */}
+        ====================================================== */}
         {menuOpen && (
           <div
             className="
@@ -757,10 +1054,10 @@ function Navbar() {
                 FAQ
               </a>
 
-              {/* =================================
+              {/* =================================================
                   LOGGED OUT MOBILE
-              ================================== */}
-              {!isLoggedIn ? (
+              ================================================== */}
+              {!isLoggedIn && (
                 <>
                   {/* Phone */}
                   <div className="mt-3">
@@ -830,145 +1127,140 @@ function Navbar() {
                     </Link>
                   </div>
                 </>
-              ) : (
-                /* =================================
-                   LOGGED-IN MOBILE
-                ================================== */
-                <>
-                  <div className="mt-4 border-t border-slate-100 pt-4">
+              )}
 
-                    {/* Account */}
+              {/* =================================================
+                  LOGGED IN MOBILE
+              ================================================== */}
+              {isLoggedIn && (
+                <div className="mt-4 border-t border-slate-100 pt-4">
+
+                  <div
+                    className="
+                      mb-3
+                      flex
+                      items-center
+                      gap-3
+                      rounded-xl
+                      bg-slate-50
+                      px-4
+                      py-3
+                    "
+                  >
                     <div
                       className="
-                        mb-3
                         flex
+                        h-10
+                        w-10
+                        shrink-0
                         items-center
-                        gap-3
-                        rounded-xl
-                        bg-slate-50
-                        px-4
-                        py-3
+                        justify-center
+                        rounded-full
+                        bg-[#e5f4f2]
+                        text-[#0B63CE]
                       "
                     >
-                      <div
-                        className="
-                          flex
-                          h-10
-                          w-10
-                          shrink-0
-                          items-center
-                          justify-center
-                          rounded-full
-                          bg-[#e5f4f2]
-                          text-[#0B63CE]
-                        "
-                      >
-                        <UserRound size={19} />
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800">
-                          Your Account
-                        </p>
-
-                        <p className="text-xs text-slate-500">
-                          Patient
-                        </p>
-                      </div>
+                      <UserRound size={19} />
                     </div>
 
-                    {/* My Profile */}
-                    <Link
-                      to="/profile"
-                      onClick={closeMenus}
-                      className="
-                        flex
-                        items-center
-                        gap-3
-                        rounded-xl
-                        px-4
-                        py-3
-                        text-sm
-                        font-medium
-                        text-slate-700
-                        transition
-                        hover:bg-slate-50
-                      "
-                    >
-                      <UserRound size={18} />
-                      My Profile
-                    </Link>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">
+                        Sadaye Noor
+                      </p>
 
-                    {/* My Appointments */}
-                    <Link
-                      to="/appointments"
-                      onClick={closeMenus}
-                      className="
-                        flex
-                        items-center
-                        gap-3
-                        rounded-xl
-                        px-4
-                        py-3
-                        text-sm
-                        font-medium
-                        text-slate-700
-                        transition
-                        hover:bg-slate-50
-                      "
-                    >
-                      <CalendarDays size={18} />
-                      My Appointments
-                    </Link>
-
-                    {/* My Prescriptions */}
-                    <Link
-                      to="/prescriptions"
-                      onClick={closeMenus}
-                      className="
-                        flex
-                        items-center
-                        gap-3
-                        rounded-xl
-                        px-4
-                        py-3
-                        text-sm
-                        font-medium
-                        text-slate-700
-                        transition
-                        hover:bg-slate-50
-                      "
-                    >
-                      <FileText size={18} />
-                      My Prescriptions
-                    </Link>
-
-                    {/* Logout */}
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="
-                        mt-2
-                        flex
-                        w-full
-                        items-center
-                        gap-3
-                        rounded-xl
-                        px-4
-                        py-3
-                        text-left
-                        text-sm
-                        font-semibold
-                        text-red-600
-                        transition
-                        hover:bg-red-50
-                      "
-                    >
-                      <LogOut size={18} />
-                      Logout
-                    </button>
+                      <p className="text-xs text-slate-500">
+                        Patient
+                      </p>
+                    </div>
                   </div>
-                </>
+
+                  <Link
+                    to="/profile"
+                    onClick={closeMenus}
+                    className="
+                      flex
+                      items-center
+                      gap-3
+                      rounded-xl
+                      px-4
+                      py-3
+                      text-sm
+                      font-medium
+                      text-slate-700
+                      transition
+                      hover:bg-slate-50
+                    "
+                  >
+                    <UserRound size={18} />
+                    My Profile
+                  </Link>
+
+                  <Link
+                    to="/appointments"
+                    onClick={closeMenus}
+                    className="
+                      flex
+                      items-center
+                      gap-3
+                      rounded-xl
+                      px-4
+                      py-3
+                      text-sm
+                      font-medium
+                      text-slate-700
+                      transition
+                      hover:bg-slate-50
+                    "
+                  >
+                    <CalendarDays size={18} />
+                    My Appointments
+                  </Link>
+
+                  <Link
+                    to="/prescriptions"
+                    onClick={closeMenus}
+                    className="
+                      flex
+                      items-center
+                      gap-3
+                      rounded-xl
+                      px-4
+                      py-3
+                      text-sm
+                      font-medium
+                      text-slate-700
+                      transition
+                      hover:bg-slate-50
+                    "
+                  >
+                    <FileText size={18} />
+                    My Prescriptions
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="
+                      mt-2
+                      flex
+                      w-full
+                      items-center
+                      gap-3
+                      rounded-xl
+                      px-4
+                      py-3
+                      text-left
+                      text-sm
+                      font-semibold
+                      text-red-600
+                      transition
+                      hover:bg-red-50
+                    "
+                  >
+                    <LogOut size={18} />
+                    Logout
+                  </button>
+                </div>
               )}
             </nav>
           </div>
