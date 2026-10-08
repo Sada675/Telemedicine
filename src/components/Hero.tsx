@@ -1,5 +1,5 @@
 import heroImage from "../assets/hero.jpg";
-import { ArrowRight, CheckCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import BookAppointmentButton from "./BookAppointmentButton";
 
 function Hero() {
