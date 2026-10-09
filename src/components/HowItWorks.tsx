@@ -95,7 +95,7 @@ function HowItWorks() {
                         flex h-16 w-16 items-center justify-center
                         rounded-full
                         border-4 border-white
-                        bg-[#245b5b]
+                        btn-dark
                         text-white
                         shadow-lg
                         transition-all duration-300

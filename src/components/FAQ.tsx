@@ -119,7 +119,7 @@ function FAQ() {
                       transition-all duration-300
                       ${
                         isOpen
-                          ? "bg-[#245b5b] text-white"
+                          ? "btn-dark text-white"
                           : "bg-[#e5f4f2] text-[#245b5b]"
                       }
                     `}
