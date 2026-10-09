@@ -7,7 +7,7 @@ function Hero() {
     <section className="bg-[#f8faf9] px-3 pt-20 pb-6 sm:px-6 sm:pt-24 sm:pb-10 lg:px-10 lg:pt-28 lg:pb-10">
       <div
         className="
-          relative mx-auto flex max-w-7xl items-center overflow-hidden
+          relative mx-auto flex max-w-6xl items-center overflow-hidden
           rounded-[22px]
           bg-gradient-to-r from-[#410200] via-[#536276] to-[#151b54]
           px-4 py-5 shadow-2xl

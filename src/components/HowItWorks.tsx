@@ -41,7 +41,7 @@ function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      className="bg-[#f8faf9] px-4 py-16 sm:px-6 lg:px-10 lg:py-5"
+      className="bg-[#f8faf9] px-4 py-16 sm:px-6 lg:px-10 lg:py-0"
     >
       <div className="mx-auto max-w-6xl">
 

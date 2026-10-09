@@ -28,7 +28,7 @@ function CustomerReviews() {
   return (
     <section
       id="reviews"
-      className="bg-[#f8faf9] px-4 py-16 sm:px-6 lg:px-10 lg:py-20"
+      className="bg-[#f8faf9] px-4 py-16 sm:px-6 lg:px-10 lg:py-10"
     >
       <div className="mx-auto max-w-6xl">
 
