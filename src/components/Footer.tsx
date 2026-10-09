@@ -281,11 +281,12 @@ function Footer() {
             </div>
 
             {/* Book Appointment */}
-            <button
-              className="mt-7 rounded-full btn-dark px-6 py-3 text-sm font-semibold text-[#2596be] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
-            >
-              Book Appointment
-            </button>
+           <Link
+  to="/book-appointment"
+  className="relative z-10 mt-7 inline-flex cursor-pointer items-center justify-center rounded-full btn-dark px-6 py-3 text-sm font-semibold text-[#2596be] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+>
+  Book Appointment
+</Link>
           </div>
         </div>
       </div>

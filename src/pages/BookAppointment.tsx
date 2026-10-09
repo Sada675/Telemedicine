@@ -438,10 +438,19 @@ function BookAppointment() {
                   <button
                     type="button"
                     disabled={!canContinue}
-                    onClick={() => navigate("/review-appointment")}
+                    onClick={() =>
+  navigate("/review-appointment", {
+    state: {
+      selectedDoctor,
+      selectedDate,
+      selectedTime,
+      reason,
+    },
+  })
+}
                     className={`flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-semibold text-white shadow-md transition-all ${
                       canContinue
-                        ? "bg-[#183b3b] hover:-translate-y-0.5 hover:bg-[#245b5b] hover:shadow-lg"
+                        ? "btn-dark hover:-translate-y-0.5 hover:bg-[#245b5b] hover:shadow-lg"
                         : "cursor-not-allowed bg-slate-300"
                     }`}
                   >

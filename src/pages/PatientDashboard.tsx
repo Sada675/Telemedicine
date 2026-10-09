@@ -180,120 +180,112 @@ function PatientDashboard() {
 
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
+<div className="grid gap-4 sm:grid-cols-3">
 
-              {/* Total */}
-              <div
-                className="
-                  rounded-2xl
-                  border
-                  border-slate-100
-                  bg-white
-                  p-5
-                  shadow-sm
-                  transition
-                  hover:-translate-y-0.5
-                  hover:shadow-md
-                "
-              >
+  {/* Total Appointments */}
+  <Link
+    to="/appointments"
+    className="
+      block rounded-2xl border border-slate-100 bg-white p-5
+      shadow-sm no-underline transition duration-200
+      hover:-translate-y-1 hover:border-[#245b5b]/30 hover:shadow-md
+      focus:outline-none focus:ring-2 focus:ring-[#0B63CE]
+    "
+  >
+    <div className="flex items-center justify-between">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e5f4f2] text-[#245b5b]">
+        <CalendarDays size={21} />
+      </div>
 
-                <div className="flex items-center justify-between">
+      <span className="text-xs font-semibold text-slate-400">
+        Total
+      </span>
+    </div>
 
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e5f4f2] text-[#245b5b]">
-                    <CalendarDays size={21} />
-                  </div>
+    <p className="mt-4 text-3xl font-bold text-[#183b3b]">
+      8
+    </p>
 
-                  <span className="text-xs font-semibold text-slate-400">
-                    Total
-                  </span>
+    <p className="mt-1 text-sm text-slate-500">
+      Appointments
+    </p>
 
-                </div>
+    <div className="mt-3 flex items-center justify-between text-xs font-medium text-[#245b5b]">
+      <span>View appointments</span>
+      <ChevronRight size={16} />
+    </div>
+  </Link>
 
-                <p className="mt-4 text-3xl font-bold text-[#183b3b]">
-                  8
-                </p>
+  {/* Upcoming Appointments */}
+  <Link to="/appointments?filter=upcoming"
+    className="
+      block rounded-2xl border border-slate-100 bg-white p-5
+      shadow-sm no-underline transition duration-200
+      hover:-translate-y-1 hover:border-blue-200 hover:shadow-md
+      focus:outline-none focus:ring-2 focus:ring-[#0B63CE]
+    "
+  >
+    <div className="flex items-center justify-between">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+        <Clock3 size={21} />
+      </div>
 
-                <p className="mt-1 text-sm text-slate-500">
-                  Appointments
-                </p>
+      <span className="text-xs font-semibold text-slate-400">
+        Upcoming
+      </span>
+    </div>
 
-              </div>
+    <p className="mt-4 text-3xl font-bold text-[#183b3b]">
+      1
+    </p>
 
-              {/* Upcoming */}
-              <div
-                className="
-                  rounded-2xl
-                  border
-                  border-slate-100
-                  bg-white
-                  p-5
-                  shadow-sm
-                  transition
-                  hover:-translate-y-0.5
-                  hover:shadow-md
-                "
-              >
+    <p className="mt-1 text-sm text-slate-500">
+      Scheduled
+    </p>
 
-                <div className="flex items-center justify-between">
+    <div className="mt-3 flex items-center justify-between text-xs font-medium text-blue-600">
+      <span>View upcoming</span>
+      <ChevronRight size={16} />
+    </div>
+  </Link>
 
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                    <Clock3 size={21} />
-                  </div>
+  {/* Prescriptions */}
+  <Link
+    to="/prescriptions"
+    className="
+      block rounded-2xl border border-slate-100 bg-white p-5
+      shadow-sm no-underline transition duration-200
+      hover:-translate-y-1 hover:border-purple-200 hover:shadow-md
+      focus:outline-none focus:ring-2 focus:ring-[#0B63CE]
+    "
+  >
+    <div className="flex items-center justify-between">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+        <FileText size={21} />
+      </div>
 
-                  <span className="text-xs font-semibold text-slate-400">
-                    Upcoming
-                  </span>
+      <span className="text-xs font-semibold text-slate-400">
+        Available
+      </span>
+    </div>
 
-                </div>
+    <p className="mt-4 text-3xl font-bold text-[#183b3b]">
+      3
+    </p>
 
-                <p className="mt-4 text-3xl font-bold text-[#183b3b]">
-                  1
-                </p>
+    <p className="mt-1 text-sm text-slate-500">
+      Prescriptions
+    </p>
 
-                <p className="mt-1 text-sm text-slate-500">
-                  Scheduled
-                </p>
+    <div className="mt-3 flex items-center justify-between text-xs font-medium text-purple-600">
+      <span>View prescriptions</span>
+      <ChevronRight size={16} />
+    </div>
+  </Link>
 
-              </div>
+</div>
 
-              {/* Prescriptions */}
-              <div
-                className="
-                  rounded-2xl
-                  border
-                  border-slate-100
-                  bg-white
-                  p-5
-                  shadow-sm
-                  transition
-                  hover:-translate-y-0.5
-                  hover:shadow-md
-                "
-              >
-
-                <div className="flex items-center justify-between">
-
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-                    <FileText size={21} />
-                  </div>
-
-                  <span className="text-xs font-semibold text-slate-400">
-                    Available
-                  </span>
-
-                </div>
-
-                <p className="mt-4 text-3xl font-bold text-[#183b3b]">
-                  3
-                </p>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Prescriptions
-                </p>
-
-              </div>
-
-            </div>
+            
           </section>
 
           {/* =================================================
@@ -421,7 +413,7 @@ function PatientDashboard() {
                   </div>
 
                   <Link
-                    to="/appointments"
+                    to="/consultation"
                     className="
                       inline-flex
                       items-center
