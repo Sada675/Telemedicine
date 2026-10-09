@@ -219,26 +219,7 @@ navigate("/patient-dashboard");
                 </button>
               </form>
 
-              {/* Demo Credentials */}
-              <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-4">
-                <p className="mb-2 text-sm font-bold text-blue-900">
-                  Demo Login Credentials
-                </p>
-
-                <p className="text-sm text-slate-600">
-                  <span className="font-semibold">Email:</span>{" "}
-                  patient@example.com
-                </p>
-
-                <p className="mt-1 text-sm text-slate-600">
-                  <span className="font-semibold">Password:</span>{" "}
-                  Patient123
-                </p>
-
-                <p className="mt-2 text-xs leading-5 text-slate-500">
-                  Use these details to test the patient dashboard.
-                </p>
-              </div>
+            
 
               {/* Signup */}
               <p className="mt-7 text-center text-sm text-slate-500">
