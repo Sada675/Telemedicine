@@ -13,6 +13,8 @@ import AppointmentConfirmation from "./pages/AppointmentConfirmation";
 import Appointments from "./pages/Appointments";
 import Prescriptions from "./pages/Prescriptions";
 import Consultation from "./pages/Consultation";
+import MyProfile from "./pages/MyProfile";
+import Notifications from "./pages/Notifications";
 
 function App() {
   return (
@@ -31,6 +33,8 @@ function App() {
       <Route path="/appointments" element={<Appointments />} />
       <Route path="/prescriptions" element={<Prescriptions />} />
       <Route path="/consultation" element={<Consultation />} />
+      <Route path="/my-profile" element={<MyProfile />} />
+      <Route path="/notifications" element={<Notifications />} />
     </Routes>
   );
 }

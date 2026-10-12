@@ -14,6 +14,13 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 
+const PROFILE_STORAGE_KEY = "telemedicinePatientProfile";
+
+type SavedPatientProfile = {
+  fullName?: string;
+  profilePicture?: string;
+};
+
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -27,6 +34,21 @@ function Navbar() {
     () => localStorage.getItem("userName") || "Sadaye Noor"
   );
 
+  const [profilePicture, setProfilePicture] = useState(() => {
+    try {
+      const savedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
+
+      if (savedProfile) {
+        const parsedProfile: SavedPatientProfile = JSON.parse(savedProfile);
+        return parsedProfile.profilePicture || "";
+      }
+    } catch (error) {
+      console.error("Unable to load profile picture:", error);
+    }
+
+    return "";
+  });
+
   // Separate refs for desktop and mobile profile dropdowns.
   const desktopProfileRef = useRef<HTMLDivElement>(null);
   const mobileProfileRef = useRef<HTMLDivElement>(null);
@@ -35,27 +57,68 @@ function Navbar() {
   const navigate = useNavigate();
 
   // ----------------------------------
-  // Synchronize login state
+  // Synchronize login state and profile
   // ----------------------------------
   const syncAuthState = useCallback(() => {
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";
 
     setIsLoggedIn(loggedIn);
-    setUserName(localStorage.getItem("userName") || "Sadaye Noor");
+
+    try {
+      const savedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
+
+      if (savedProfile) {
+        const parsedProfile: SavedPatientProfile = JSON.parse(savedProfile);
+
+        const savedName =
+          parsedProfile.fullName?.trim() ||
+          localStorage.getItem("userName") ||
+          "Sadaye Noor";
+
+        const savedPicture = parsedProfile.profilePicture || "";
+
+        // Update navbar name and picture.
+        setUserName(savedName);
+        setProfilePicture(savedPicture);
+
+        // Keep the separate username key synchronized.
+        if (localStorage.getItem("userName") !== savedName) {
+          localStorage.setItem("userName", savedName);
+        }
+      } else {
+        // Fall back to the existing username if no profile is saved.
+        setUserName(localStorage.getItem("userName") || "Sadaye Noor");
+        setProfilePicture("");
+      }
+    } catch (error) {
+      console.error("Unable to synchronize profile:", error);
+
+      setUserName(localStorage.getItem("userName") || "Sadaye Noor");
+      setProfilePicture("");
+    }
 
     if (!loggedIn) {
       setProfileOpen(false);
     }
   }, []);
 
+  // ----------------------------------
+  // Listen for profile and auth changes
+  // ----------------------------------
   useEffect(() => {
+    // Load the latest saved profile immediately.
     syncAuthState();
 
+    // Same-tab updates from MyProfile and login/logout.
     window.addEventListener("authChange", syncAuthState);
+    window.addEventListener("profileUpdate", syncAuthState);
+
+    // Updates made in another browser tab.
     window.addEventListener("storage", syncAuthState);
 
     return () => {
       window.removeEventListener("authChange", syncAuthState);
+      window.removeEventListener("profileUpdate", syncAuthState);
       window.removeEventListener("storage", syncAuthState);
     };
   }, [syncAuthState, location.pathname]);
@@ -92,7 +155,6 @@ function Navbar() {
   const goToDashboard = () => {
     closeMenus();
 
-    // Read the latest login status directly from localStorage.
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";
 
     if (!loggedIn) {
@@ -107,21 +169,17 @@ function Navbar() {
   // Logout
   // ----------------------------------
   const handleLogout = () => {
-    // Remove authentication information.
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("userName");
 
-    // Update Navbar immediately.
     setIsLoggedIn(false);
     setUserName("Sadaye Noor");
+    setProfilePicture("");
 
-    // Close dropdowns and mobile menu.
     closeMenus();
 
-    // Notify other components listening for authentication changes.
     window.dispatchEvent(new Event("authChange"));
 
-    // Return to Home.
     navigate("/", { replace: true });
   };
 
@@ -203,8 +261,7 @@ function Navbar() {
   const isActive = (sectionId: string) => {
     return (
       location.pathname === "/" &&
-      (activeSection === sectionId ||
-        location.hash === `#${sectionId}`)
+      (activeSection === sectionId || location.hash === `#${sectionId}`)
     );
   };
 
@@ -217,12 +274,7 @@ function Navbar() {
       return;
     }
 
-    const sectionIds = [
-      "doctors",
-      "services",
-      "how-it-works",
-      "faq",
-    ];
+    const sectionIds = ["doctors", "services", "how-it-works", "faq"];
 
     const updateActiveSection = () => {
       let currentSection = "";
@@ -321,7 +373,6 @@ function Navbar() {
 
   // ----------------------------------
   // Shared profile dropdown content
-  // Render JSX directly instead of creating a nested component.
   // ----------------------------------
   const renderProfileMenu = () => (
     <>
@@ -331,8 +382,16 @@ function Navbar() {
         onClick={goToDashboard}
         className="flex w-full items-center gap-3 border-b border-slate-100 px-4 py-4 text-left transition hover:bg-blue-50"
       >
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#e5f4f2] text-[#0B63CE]">
-          <UserRound size={21} />
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e5f4f2] text-[#0B63CE]">
+          {profilePicture ? (
+            <img
+              src={profilePicture}
+              alt={userName}
+              className="h-full w-full rounded-full object-cover"
+            />
+          ) : (
+            <UserRound size={21} />
+          )}
         </div>
 
         <div className="min-w-0 flex-1">
@@ -358,7 +417,7 @@ function Navbar() {
         </button>
 
         <Link
-          to="/profile"
+          to="/my-profile"
           onClick={closeMenus}
           className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-[#0B63CE]"
         >
@@ -503,17 +562,18 @@ function Navbar() {
             ) : (
               <>
                 {/* Desktop notifications */}
-                <button
-                  type="button"
-                  aria-label="Notifications"
-                  className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 hover:text-[#0B63CE]"
-                >
-                  <Bell size={21} />
+                
+<Link
+  to="/notifications"
+  aria-label="Notifications"
+  className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 hover:text-[#0B63CE]"
+>
+  <Bell size={21} />
 
-                  <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
-                    3
-                  </span>
-                </button>
+  <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+    3
+  </span>
+</Link>
 
                 {/* Desktop profile dropdown */}
                 <div ref={desktopProfileRef} className="relative">
@@ -524,8 +584,16 @@ function Navbar() {
                     aria-label="Open profile menu"
                     aria-expanded={profileOpen}
                   >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-[#e5f4f2] text-[#0B63CE] shadow-sm ring-1 ring-slate-200">
-                      <UserRound size={20} />
+                    <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-[#e5f4f2] text-[#0B63CE] shadow-sm ring-1 ring-slate-200">
+                      {profilePicture ? (
+                        <img
+                          src={profilePicture}
+                          alt={userName}
+                          className="h-full w-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <UserRound size={20} />
+                      )}
                     </div>
 
                     <div className="hidden text-left xl:block">
@@ -533,9 +601,7 @@ function Navbar() {
                         {userName}
                       </p>
 
-                      <p className="text-[10px] text-slate-500">
-                        Patient
-                      </p>
+                      <p className="text-[10px] text-slate-500">Patient</p>
                     </div>
 
                     <ChevronDown
@@ -561,17 +627,18 @@ function Navbar() {
             {isLoggedIn && (
               <>
                 {/* Mobile notifications */}
-                <button
-                  type="button"
-                  aria-label="Notifications"
-                  className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 hover:text-[#0B63CE]"
-                >
-                  <Bell size={21} />
+                
+<Link
+  to="/notifications"
+  aria-label="Notifications"
+  className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 hover:text-[#0B63CE]"
+>
+  <Bell size={21} />
 
-                  <span className="absolute right-0 top-0 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-white">
-                    3
-                  </span>
-                </button>
+  <span className="absolute right-0 top-0 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-white">
+    3
+  </span>
+</Link>
 
                 {/* Mobile profile dropdown */}
                 <div ref={mobileProfileRef} className="relative">
@@ -585,8 +652,16 @@ function Navbar() {
                     aria-label="Open profile menu"
                     aria-expanded={profileOpen}
                   >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e5f4f2] text-[#0B63CE] ring-1 ring-slate-200">
-                      <UserRound size={17} />
+                    <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[#e5f4f2] text-[#0B63CE] ring-1 ring-slate-200">
+                      {profilePicture ? (
+                        <img
+                          src={profilePicture}
+                          alt={userName}
+                          className="h-full w-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <UserRound size={17} />
+                      )}
                     </div>
 
                     <span className="mt-0.5 max-w-[72px] truncate text-[9px] font-semibold leading-tight text-slate-700">
@@ -624,167 +699,157 @@ function Navbar() {
         </div>
 
         {/* MOBILE MENU */}
-{menuOpen && (
+        {menuOpen && (
+          <div className="relative z-[105] border-t border-slate-100 bg-white py-4 lg:hidden">
+            <nav className="flex flex-col gap-1">
+              {/* TOP ACTION BUTTONS — Always visible */}
+              <div className="grid grid-cols-2 gap-2 border-b border-slate-100 px-3 pb-4">
+                {/* Call Us */}
+                <a
+                  href="tel:+923001234567"
+                  aria-label="Call Telemedicine"
+                  className="flex min-h-[46px] items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-2 text-sm font-semibold text-slate-700 transition hover:border-[#0B63CE] hover:bg-blue-50 hover:text-[#0B63CE]"
+                >
+                  <Phone size={17} className="shrink-0 text-[#0B63CE]" />
+                  <span>Call Us</span>
+                </a>
 
-  <div className="relative z-[105] border-t border-slate-100 bg-white py-4 lg:hidden">
-    <nav className="flex flex-col gap-1">
+                {/* Book Appointment */}
+                <Link
+                  to="/book-appointment"
+                  onClick={closeMenus}
+                  className="flex min-h-[46px] items-center justify-center gap-2 rounded-xl bg-[#0B63CE] px-2 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-[#0955AE]"
+                >
+                  <CalendarDays size={17} className="shrink-0" />
+                  <span>Book Appointment</span>
+                </Link>
+              </div>
 
+              {/* HOME */}
+              <button
+                type="button"
+                onClick={goToHome}
+                className={`rounded-xl px-4 py-3 text-left transition ${
+                  location.pathname === "/" && !location.hash
+                    ? "bg-blue-50 font-semibold text-[#0B63CE]"
+                    : "font-medium text-slate-600 hover:bg-slate-50 hover:text-[#0B63CE]"
+                }`}
+              >
+                Home
+              </button>
 
-  {/* TOP ACTION BUTTONS — Always visible */}
-  <div className="grid grid-cols-2 gap-2 border-b border-slate-100 px-3 pb-4">
+              {/* DOCTORS */}
+              <button
+                type="button"
+                onClick={() => navigateToSection("doctors")}
+                className={mobileLinkClass("doctors")}
+              >
+                Doctors
+              </button>
 
-    {/* Call Us */}
-    <a
-      href="tel:+923001234567"
-      aria-label="Call Telemedicine"
-      className="flex min-h-[46px] items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-2 text-sm font-semibold text-slate-700 transition hover:border-[#0B63CE] hover:bg-blue-50 hover:text-[#0B63CE]"
-    >
-      <Phone size={17} className="shrink-0 text-[#0B63CE]" />
-      <span>Call Us</span>
-    </a>
+              {/* SERVICES */}
+              <button
+                type="button"
+                onClick={() => navigateToSection("services")}
+                className={mobileLinkClass("services")}
+              >
+                Services
+              </button>
 
-    {/* Book Appointment */}
-    <Link
-      to="/book-appointment"
-      onClick={closeMenus}
-      className="flex min-h-[46px] items-center justify-center gap-2 rounded-xl bg-[#0B63CE] px-2 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-[#0955AE]"
-    >
-      <CalendarDays size={17} className="shrink-0" />
-      <span>Book Appointment</span>
-    </Link>
-  </div>
+              {/* HOW IT WORKS */}
+              <button
+                type="button"
+                onClick={() => navigateToSection("how-it-works")}
+                className={mobileLinkClass("how-it-works")}
+              >
+                How It Works
+              </button>
 
-  {/* HOME */}
-  <button
-    type="button"
-    onClick={goToHome}
-    className={`rounded-xl px-4 py-3 text-left transition ${
-      location.pathname === "/" && !location.hash
-        ? "bg-blue-50 font-semibold text-[#0B63CE]"
-        : "font-medium text-slate-600 hover:bg-slate-50 hover:text-[#0B63CE]"
-    }`}
-  >
-    Home
-  </button>
+              {/* FAQ */}
+              <button
+                type="button"
+                onClick={() => navigateToSection("faq")}
+                className={mobileLinkClass("faq")}
+              >
+                FAQ
+              </button>
 
-  {/* DOCTORS */}
-  <button
-    type="button"
-    onClick={() => navigateToSection("doctors")}
-    className={mobileLinkClass("doctors")}
-  >
-    Doctors
-  </button>
+              {/* LOGGED-OUT USER */}
+              {!isLoggedIn && (
+                <div className="mt-3 border-t border-slate-100 px-3 pt-3">
+                  <Link
+                    to="/login"
+                    onClick={closeMenus}
+                    className="flex w-full items-center justify-center rounded-xl border border-[#0B63CE] px-4 py-3 text-sm font-semibold text-[#0B63CE] transition hover:bg-blue-50"
+                  >
+                    Login to Your Account
+                  </Link>
+                </div>
+              )}
 
-  {/* SERVICES */}
-  <button
-    type="button"
-    onClick={() => navigateToSection("services")}
-    className={mobileLinkClass("services")}
-  >
-    Services
-  </button>
+              {/* LOGGED-IN USER */}
+              {isLoggedIn && (
+                <div className="mt-3 border-t border-slate-100 px-2 pt-3">
+                  <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                    My Account
+                  </p>
 
-  {/* HOW IT WORKS */}
-  <button
-    type="button"
-    onClick={() => navigateToSection("how-it-works")}
-    className={mobileLinkClass("how-it-works")}
-  >
-    How It Works
-  </button>
+                  {/* Dashboard */}
+                  <button
+                    type="button"
+                    onClick={goToDashboard}
+                    className="flex w-full items-center gap-3 rounded-xl bg-blue-50 px-3 py-3 text-left text-sm font-semibold text-[#0B63CE] transition hover:bg-blue-100"
+                  >
+                    <LayoutDashboard size={18} />
+                    Patient Dashboard
+                  </button>
 
-  {/* FAQ */}
-  <button
-    type="button"
-    onClick={() => navigateToSection("faq")}
-    className={mobileLinkClass("faq")}
-  >
-    FAQ
-  </button>
+                  {/* Profile */}
+                  <Link
+                    to="/my-profile"
+                    onClick={closeMenus}
+                    className="mt-1 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-[#0B63CE]"
+                  >
+                    <UserRound size={18} />
+                    My Profile
+                  </Link>
 
-  {/* LOGGED-OUT USER */}
-  {!isLoggedIn && (
-    <div className="mt-3 border-t border-slate-100 px-3 pt-3">
-      <Link
-        to="/login"
-        onClick={closeMenus}
-        className="flex w-full items-center justify-center rounded-xl border border-[#0B63CE] px-4 py-3 text-sm font-semibold text-[#0B63CE] transition hover:bg-blue-50"
-      >
-        Login to Your Account
-      </Link>
-    </div>
-  )}
+                  {/* Appointments */}
+                  <Link
+                    to="/appointments"
+                    onClick={closeMenus}
+                    className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-[#0B63CE]"
+                  >
+                    <CalendarDays size={18} />
+                    My Appointments
+                  </Link>
 
-  {/* LOGGED-IN USER */}
-  {isLoggedIn && (
-    <div className="mt-3 border-t border-slate-100 px-2 pt-3">
+                  {/* Prescriptions */}
+                  <Link
+                    to="/prescriptions"
+                    onClick={closeMenus}
+                    className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-[#0B63CE]"
+                  >
+                    <FileText size={18} />
+                    My Prescriptions
+                  </Link>
 
-      <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-        My Account
-      </p>
-
-      {/* Dashboard */}
-      <button
-        type="button"
-        onClick={goToDashboard}
-        className="flex w-full items-center gap-3 rounded-xl bg-blue-50 px-3 py-3 text-left text-sm font-semibold text-[#0B63CE] transition hover:bg-blue-100"
-      >
-        <LayoutDashboard size={18} />
-        Patient Dashboard
-      </button>
-
-      {/* Profile */}
-      <Link
-        to="/profile"
-        onClick={closeMenus}
-        className="mt-1 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-[#0B63CE]"
-      >
-        <UserRound size={18} />
-        My Profile
-      </Link>
-
-      {/* Appointments */}
-      <Link
-        to="/appointments"
-        onClick={closeMenus}
-        className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-[#0B63CE]"
-      >
-        <CalendarDays size={18} />
-        My Appointments
-      </Link>
-
-      {/* Prescriptions */}
-      <Link
-        to="/prescriptions"
-        onClick={closeMenus}
-        className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-[#0B63CE]"
-      >
-        <FileText size={18} />
-        My Prescriptions
-      </Link>
-
-      {/* Logout */}
-      <div className="mt-3 border-t border-slate-100 pt-3">
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50"
-        >
-          <LogOut size={18} />
-          Logout
-        </button>
-      </div>
-
-    </div>
-  )}
-
-</nav>
-
-
-  </div>
-)}
-
+                  {/* Logout */}
+                  <div className="mt-3 border-t border-slate-100 pt-3">
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                    >
+                      <LogOut size={18} />
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              )}
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );
