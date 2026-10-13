@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import BookAppointmentButton from "../components/BookAppointmentButton";
 import Footer from "../components/Footer";
 import {
   CalendarDays,
+  CheckCircle,
   ChevronRight,
   Clock3,
   FileText,
@@ -12,6 +14,48 @@ import {
 import Navbar from "../components/Navbar";
 
 function PatientDashboard() {
+  const [patientImage, setPatientImage] = useState("");
+
+  useEffect(() => {
+    const loadProfilePicture = () => {
+      try {
+        const savedProfile = localStorage.getItem("telemedicinePatientProfile");
+
+        if (!savedProfile) {
+          setPatientImage("");
+          return;
+        }
+
+        const profile = JSON.parse(savedProfile);
+        setPatientImage(
+          typeof profile.profilePicture === "string"
+            ? profile.profilePicture
+            : ""
+        );
+      } catch (error) {
+        console.error("Unable to load profile picture:", error);
+        setPatientImage("");
+      }
+    };
+
+    // Load the saved picture when the dashboard opens.
+    loadProfilePicture();
+
+    // Refresh when My Profile saves changes in this browser tab.
+    window.addEventListener("profileUpdate", loadProfilePicture);
+
+    // Refresh when localStorage changes in another tab.
+    window.addEventListener("storage", loadProfilePicture);
+
+    // Refresh if the user returns to this page.
+    window.addEventListener("pageshow", loadProfilePicture);
+
+    return () => {
+      window.removeEventListener("profileUpdate", loadProfilePicture);
+      window.removeEventListener("storage", loadProfilePicture);
+      window.removeEventListener("pageshow", loadProfilePicture);
+    };
+  }, []);
   const recentActivities = [
     {
       icon: FileText,
@@ -53,17 +97,17 @@ function PatientDashboard() {
       <main className="w-full min-w-0">
 
         <div
-  className="
-    mx-auto
-    w-full
-    max-w-7xl
-    px-4
-    pb-8
-    pt-[96px]
-    sm:px-6
-    lg:px-8
-  "
->
+          className="
+            mx-auto
+            w-full
+            max-w-6xl
+            px-4
+            pb-8
+            pt-[96px]
+            sm:px-6
+            lg:px-8
+          "
+        >
 
           {/* =================================================
               DASHBOARD TOP HEADER
@@ -85,81 +129,146 @@ function PatientDashboard() {
           </div>
 
           {/* =================================================
-              WELCOME / HERO CARD
+              WELCOME / HERO CARD — MATCHES THE HOME HERO DESIGN
           ================================================== */}
           <section
             className="
-              relative
-              w-full
-              overflow-hidden
-              rounded-[26px]
-              bg-gradient-to-r
-              from-[#410200]
-              via-[#536276]
-              to-[#151b54]
-              p-6
-              text-white
-              shadow-xl
-              sm:p-8
-              lg:p-10
+              relative mx-auto flex max-w-6xl items-center overflow-hidden
+              rounded-[22px]
+              bg-gradient-to-r from-[#410200] via-[#536276] to-[#151b54]
+              px-4 py-5 shadow-2xl
+              sm:rounded-[30px] sm:px-7 sm:py-8
+              lg:min-h-[500px] lg:rounded-[36px] lg:px-16 lg:py-14
             "
           >
+            {/* Soft background glow */}
+            <div className="absolute -left-20 -top-20 h-60 w-60 rounded-full bg-white/10 blur-3xl" />
+            <div className="absolute -bottom-20 right-10 h-60 w-60 rounded-full bg-blue-300/10 blur-3xl" />
 
+            {/* ================= LEFT CONTENT ================= */}
             <div
               className="
-                absolute
-                -right-16
-                -top-20
-                h-56
-                w-56
-                rounded-full
-                bg-white/10
-                blur-2xl
+                relative z-10 w-[68%] text-left text-white
+                sm:w-[62%]
+                lg:w-full lg:max-w-xl lg:text-left
               "
-            />
-
-            <div
-              className="
-                absolute
-                -bottom-24
-                -right-10
-                h-64
-                w-64
-                rounded-full
-                border
-                border-white/10
-              "
-            />
-
-            <div className="relative z-10 max-w-2xl">
-
-              <span
+            >
+              {/* Small badge */}
+              <div
                 className="
-                  inline-flex
-                  items-center
-                  rounded-full
-                  bg-white/15
-                  px-4
-                  py-2
-                  text-xs
-                  font-semibold
-                  backdrop-blur-sm
+                  mb-2 inline-flex items-center gap-1 rounded-full bg-white/15
+                  px-2.5 py-1 text-[9px] font-medium backdrop-blur-sm
+                  sm:mb-3 sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-[11px]
+                  lg:mb-5 lg:gap-2 lg:px-4 lg:py-2 lg:text-sm
                 "
               >
+                <CheckCircle size={11} className="sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4" />
                 Your health, our priority
-              </span>
+              </div>
 
-              <h2 className="mt-5 text-2xl font-bold leading-tight sm:text-3xl lg:text-4xl">
-                How can we help you today?
+              {/* Heading */}
+              <h2
+                className="
+                  text-[22px] font-bold leading-[1.1]
+                  sm:text-4xl
+                  lg:text-6xl lg:leading-tight
+                "
+              >
+                How can we help you?
+                <br />
+                <span className="text-[#F9A603]">Your Expert Care.</span>
               </h2>
 
-              <p className="mt-3 max-w-xl text-sm leading-7 text-white/85 sm:text-base">
-                Connect with your doctor, manage your consultations,
-                and stay on top of your healthcare — all in one place.
+              {/* Description */}
+              <p
+                className="
+                  mt-2 max-w-[175px] text-[9px] leading-4 text-white/80
+                  sm:mt-3 sm:max-w-[300px] sm:text-xs sm:leading-5
+                  lg:mx-0 lg:mt-5 lg:max-w-lg lg:text-base lg:leading-7
+                "
+              >
+                Connect with your doctor, manage your consultations, and stay on top
+                of your healthcare — all in one place.
               </p>
 
+              {/* Book Appointment Button */}
               <BookAppointmentButton />
+            </div>
 
+            {/* ================= RIGHT IMAGE ================= */}
+            <div
+              className="
+                absolute bottom-0 right-0 flex w-[42%] justify-end
+                sm:w-[40%]
+                lg:absolute lg:bottom-0 lg:right-8 lg:mt-0 lg:w-[46%]
+              "
+            >
+              <div className="relative">
+                {/* Image glow and blending effect */}
+
+<div
+  className="
+    absolute inset-0
+    rounded-t-[70px] rounded-b-[20px]
+    bg-gradient-to-t
+    from-[#151b54]/70
+    via-[#536276]/15
+    to-transparent
+    blur-2xl
+    scale-110
+  "
+/>
+
+{/* Saved Patient Profile Picture */}
+<img
+src={
+patientImage ||
+"https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600"
+}
+alt="Patient Profile"
+onError={(event) => {
+event.currentTarget.onerror = null;
+event.currentTarget.src =
+"https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600";
+}}
+className="
+relative z-10
+h-[185px] w-[145px]
+object-cover object-top
+rounded-t-[70px] rounded-b-[20px]
+shadow-[0_0_25px_rgba(255,255,255,0.18),0_10px_35px_rgba(0,0,0,0.35)]
+[mask-image:linear-gradient(to_bottom,black_70%,transparent_100%)]
+sm:h-[280px] sm:w-[230px]
+sm:rounded-t-[100px] sm:rounded-b-[25px]
+sm:[mask-image:linear-gradient(to_bottom,black_78%,transparent_100%)]
+lg:h-[440px] lg:w-[390px]
+lg:rounded-t-[140px] lg:rounded-b-[30px]
+lg:[mask-image:linear-gradient(to_bottom,black_82%,transparent_100%)]
+"
+/>
+
+
+
+                {/* Floating mini card */}
+                <div
+                  className="
+                    absolute bottom-2 -left-8 z-20 rounded-lg bg-white/95
+                    px-2 py-1.5 shadow-xl backdrop-blur-sm
+                    sm:bottom-4 sm:-left-8 sm:rounded-xl sm:px-3 sm:py-2
+                    lg:bottom-5 lg:-left-10 lg:rounded-2xl lg:px-4 lg:py-3
+                  "
+                >
+                  <p className="text-[7px] font-medium text-slate-500 sm:text-[9px] lg:text-xs">
+                    Available Online
+                  </p>
+                  <div className="mt-0.5 flex items-center gap-1 sm:gap-1.5 lg:mt-1 lg:gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 sm:h-2 sm:w-2 lg:h-2.5 lg:w-2.5" />
+                    <span className="text-[8px] font-semibold text-slate-800 sm:text-[10px] lg:text-sm">
+                      Expert Doctors
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -180,112 +289,110 @@ function PatientDashboard() {
 
             </div>
 
-<div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-3">
 
-  {/* Total Appointments */}
-  <Link
-    to="/appointments"
-    className="
-      block rounded-2xl border border-slate-100 bg-white p-5
-      shadow-sm no-underline transition duration-200
-      hover:-translate-y-1 hover:border-[#245b5b]/30 hover:shadow-md
-      focus:outline-none focus:ring-2 focus:ring-[#0B63CE]
-    "
-  >
-    <div className="flex items-center justify-between">
-      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e5f4f2] text-[#245b5b]">
-        <CalendarDays size={21} />
-      </div>
+              {/* Total Appointments */}
+              <Link
+                to="/appointments"
+                className="
+                  block rounded-2xl border border-slate-100 bg-white p-5
+                  shadow-sm no-underline transition duration-200
+                  hover:-translate-y-1 hover:border-[#245b5b]/30 hover:shadow-md
+                  focus:outline-none focus:ring-2 focus:ring-[#0B63CE]
+                "
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e5f4f2] text-[#245b5b]">
+                    <CalendarDays size={21} />
+                  </div>
 
-      <span className="text-xs font-semibold text-slate-400">
-        Total
-      </span>
-    </div>
+                  <span className="text-xs font-semibold text-slate-400">
+                    Total
+                  </span>
+                </div>
 
-    <p className="mt-4 text-3xl font-bold text-[#183b3b]">
-      8
-    </p>
+                <p className="mt-4 text-3xl font-bold text-[#183b3b]">
+                  8
+                </p>
 
-    <p className="mt-1 text-sm text-slate-500">
-      Appointments
-    </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Appointments
+                </p>
 
-    <div className="mt-3 flex items-center justify-between text-xs font-medium text-[#245b5b]">
-      <span>View appointments</span>
-      <ChevronRight size={16} />
-    </div>
-  </Link>
+                <div className="mt-3 flex items-center justify-between text-xs font-medium text-[#245b5b]">
+                  <span>View appointments</span>
+                  <ChevronRight size={16} />
+                </div>
+              </Link>
 
-  {/* Upcoming Appointments */}
-  <Link to="/appointments?filter=upcoming"
-    className="
-      block rounded-2xl border border-slate-100 bg-white p-5
-      shadow-sm no-underline transition duration-200
-      hover:-translate-y-1 hover:border-blue-200 hover:shadow-md
-      focus:outline-none focus:ring-2 focus:ring-[#0B63CE]
-    "
-  >
-    <div className="flex items-center justify-between">
-      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-        <Clock3 size={21} />
-      </div>
+              {/* Upcoming Appointments */}
+              <Link to="/appointments?filter=upcoming"
+                className="
+                  block rounded-2xl border border-slate-100 bg-white p-5
+                  shadow-sm no-underline transition duration-200
+                  hover:-translate-y-1 hover:border-blue-200 hover:shadow-md
+                  focus:outline-none focus:ring-2 focus:ring-[#0B63CE]
+                "
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                    <Clock3 size={21} />
+                  </div>
 
-      <span className="text-xs font-semibold text-slate-400">
-        Upcoming
-      </span>
-    </div>
+                  <span className="text-xs font-semibold text-slate-400">
+                    Upcoming
+                  </span>
+                </div>
 
-    <p className="mt-4 text-3xl font-bold text-[#183b3b]">
-      1
-    </p>
+                <p className="mt-4 text-3xl font-bold text-[#183b3b]">
+                  1
+                </p>
 
-    <p className="mt-1 text-sm text-slate-500">
-      Scheduled
-    </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Scheduled
+                </p>
 
-    <div className="mt-3 flex items-center justify-between text-xs font-medium text-blue-600">
-      <span>View upcoming</span>
-      <ChevronRight size={16} />
-    </div>
-  </Link>
+                <div className="mt-3 flex items-center justify-between text-xs font-medium text-blue-600">
+                  <span>View upcoming</span>
+                  <ChevronRight size={16} />
+                </div>
+              </Link>
 
-  {/* Prescriptions */}
-  <Link
-    to="/prescriptions"
-    className="
-      block rounded-2xl border border-slate-100 bg-white p-5
-      shadow-sm no-underline transition duration-200
-      hover:-translate-y-1 hover:border-purple-200 hover:shadow-md
-      focus:outline-none focus:ring-2 focus:ring-[#0B63CE]
-    "
-  >
-    <div className="flex items-center justify-between">
-      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-        <FileText size={21} />
-      </div>
+              {/* Prescriptions */}
+              <Link
+                to="/prescriptions"
+                className="
+                  block rounded-2xl border border-slate-100 bg-white p-5
+                  shadow-sm no-underline transition duration-200
+                  hover:-translate-y-1 hover:border-purple-200 hover:shadow-md
+                  focus:outline-none focus:ring-2 focus:ring-[#0B63CE]
+                "
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+                    <FileText size={21} />
+                  </div>
 
-      <span className="text-xs font-semibold text-slate-400">
-        Available
-      </span>
-    </div>
+                  <span className="text-xs font-semibold text-slate-400">
+                    Available
+                  </span>
+                </div>
 
-    <p className="mt-4 text-3xl font-bold text-[#183b3b]">
-      3
-    </p>
+                <p className="mt-4 text-3xl font-bold text-[#183b3b]">
+                  3
+                </p>
 
-    <p className="mt-1 text-sm text-slate-500">
-      Prescriptions
-    </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Prescriptions
+                </p>
 
-    <div className="mt-3 flex items-center justify-between text-xs font-medium text-purple-600">
-      <span>View prescriptions</span>
-      <ChevronRight size={16} />
-    </div>
-  </Link>
+                <div className="mt-3 flex items-center justify-between text-xs font-medium text-purple-600">
+                  <span>View prescriptions</span>
+                  <ChevronRight size={16} />
+                </div>
+              </Link>
 
-</div>
-
-            
+            </div>
           </section>
 
           {/* =================================================

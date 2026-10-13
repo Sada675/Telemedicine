@@ -24,6 +24,7 @@ type SavedPatientProfile = {
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("");
 
   const [isLoggedIn, setIsLoggedIn] = useState(
@@ -49,15 +50,16 @@ function Navbar() {
     return "";
   });
 
-  // Separate refs for desktop and mobile profile dropdowns.
   const desktopProfileRef = useRef<HTMLDivElement>(null);
   const mobileProfileRef = useRef<HTMLDivElement>(null);
+  const desktopLoginRef = useRef<HTMLDivElement>(null);
+  const mobileLoginRef = useRef<HTMLDivElement>(null);
 
   const location = useLocation();
   const navigate = useNavigate();
 
   // ----------------------------------
-  // Synchronize login state and profile
+  // Synchronize authentication and profile
   // ----------------------------------
   const syncAuthState = useCallback(() => {
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";
@@ -75,18 +77,13 @@ function Navbar() {
           localStorage.getItem("userName") ||
           "Sadaye Noor";
 
-        const savedPicture = parsedProfile.profilePicture || "";
-
-        // Update navbar name and picture.
         setUserName(savedName);
-        setProfilePicture(savedPicture);
+        setProfilePicture(parsedProfile.profilePicture || "");
 
-        // Keep the separate username key synchronized.
         if (localStorage.getItem("userName") !== savedName) {
           localStorage.setItem("userName", savedName);
         }
       } else {
-        // Fall back to the existing username if no profile is saved.
         setUserName(localStorage.getItem("userName") || "Sadaye Noor");
         setProfilePicture("");
       }
@@ -103,17 +100,13 @@ function Navbar() {
   }, []);
 
   // ----------------------------------
-  // Listen for profile and auth changes
+  // Listen for login and profile changes
   // ----------------------------------
   useEffect(() => {
-    // Load the latest saved profile immediately.
     syncAuthState();
 
-    // Same-tab updates from MyProfile and login/logout.
     window.addEventListener("authChange", syncAuthState);
     window.addEventListener("profileUpdate", syncAuthState);
-
-    // Updates made in another browser tab.
     window.addEventListener("storage", syncAuthState);
 
     return () => {
@@ -124,11 +117,12 @@ function Navbar() {
   }, [syncAuthState, location.pathname]);
 
   // ----------------------------------
-  // Close all menus
+  // Close menus
   // ----------------------------------
   const closeMenus = useCallback(() => {
     setMenuOpen(false);
     setProfileOpen(false);
+    setLoginOpen(false);
   }, []);
 
   // ----------------------------------
@@ -158,11 +152,19 @@ function Navbar() {
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";
 
     if (!loggedIn) {
-      navigate("/login");
+      navigate("/patient-login");
       return;
     }
 
-    navigate("/patient-dashboard");
+    const role = localStorage.getItem("userRole")?.toLowerCase();
+
+    if (role === "doctor") {
+      navigate("/doctor-dashboard");
+    } else if (role === "admin") {
+      navigate("/admin-dashboard");
+    } else {
+      navigate("/patient-dashboard");
+    }
   };
 
   // ----------------------------------
@@ -171,6 +173,8 @@ function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("userName");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem(PROFILE_STORAGE_KEY);
 
     setIsLoggedIn(false);
     setUserName("Sadaye Noor");
@@ -181,6 +185,12 @@ function Navbar() {
     window.dispatchEvent(new Event("authChange"));
 
     navigate("/", { replace: true });
+
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "smooth",
+    });
   };
 
   // ----------------------------------
@@ -207,7 +217,7 @@ function Navbar() {
   };
 
   // ----------------------------------
-  // Scroll to a section after navigation
+  // Scroll to section after navigation
   // ----------------------------------
   useEffect(() => {
     if (location.pathname !== "/" || !location.hash) {
@@ -241,7 +251,7 @@ function Navbar() {
   }, [location.pathname, location.hash]);
 
   // ----------------------------------
-  // Scroll to top when opening Home
+  // Scroll to top on Home
   // ----------------------------------
   useEffect(() => {
     if (location.pathname === "/" && !location.hash) {
@@ -256,14 +266,11 @@ function Navbar() {
   }, [location.pathname, location.hash]);
 
   // ----------------------------------
-  // Determine active navigation link
+  // Active navigation link
   // ----------------------------------
-  const isActive = (sectionId: string) => {
-    return (
-      location.pathname === "/" &&
-      (activeSection === sectionId || location.hash === `#${sectionId}`)
-    );
-  };
+  const isActive = (sectionId: string) =>
+    location.pathname === "/" &&
+    (activeSection === sectionId || location.hash === `#${sectionId}`);
 
   // ----------------------------------
   // Update active section while scrolling
@@ -302,20 +309,36 @@ function Navbar() {
   }, [location.pathname]);
 
   // ----------------------------------
-  // Close profile dropdown when clicking outside
+  // Close dropdowns when clicking outside
   // ----------------------------------
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
 
-      const clickedInsideDesktop =
+      const clickedInsideDesktopProfile =
         desktopProfileRef.current?.contains(target) ?? false;
 
-      const clickedInsideMobile =
+      const clickedInsideMobileProfile =
         mobileProfileRef.current?.contains(target) ?? false;
 
-      if (!clickedInsideDesktop && !clickedInsideMobile) {
+      const clickedInsideDesktopLogin =
+        desktopLoginRef.current?.contains(target) ?? false;
+
+      const clickedInsideMobileLogin =
+        mobileLoginRef.current?.contains(target) ?? false;
+
+      if (
+        !clickedInsideDesktopProfile &&
+        !clickedInsideMobileProfile
+      ) {
         setProfileOpen(false);
+      }
+
+      if (
+        !clickedInsideDesktopLogin &&
+        !clickedInsideMobileLogin
+      ) {
+        setLoginOpen(false);
       }
     };
 
@@ -327,20 +350,21 @@ function Navbar() {
   }, []);
 
   // ----------------------------------
-  // Close menus when the route changes
+  // Close menus when route changes
   // ----------------------------------
   useEffect(() => {
     closeMenus();
   }, [location.pathname, location.hash, closeMenus]);
 
   // ----------------------------------
-  // Close mobile menu when entering desktop width
+  // Close mobile menu on desktop width
   // ----------------------------------
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
         setMenuOpen(false);
         setProfileOpen(false);
+        setLoginOpen(false);
       }
     };
 
@@ -372,11 +396,10 @@ function Navbar() {
     }`;
 
   // ----------------------------------
-  // Shared profile dropdown content
+  // Shared profile dropdown
   // ----------------------------------
   const renderProfileMenu = () => (
     <>
-      {/* User information / Dashboard shortcut */}
       <button
         type="button"
         onClick={goToDashboard}
@@ -400,12 +423,11 @@ function Navbar() {
           </p>
 
           <p className="mt-0.5 text-xs text-slate-500">
-            Open Patient Dashboard
+            Open Dashboard
           </p>
         </div>
       </button>
 
-      {/* Profile navigation */}
       <div className="p-2">
         <button
           type="button"
@@ -413,7 +435,7 @@ function Navbar() {
           className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-blue-50 hover:text-[#0B63CE]"
         >
           <LayoutDashboard size={18} />
-          Patient Dashboard
+          Dashboard
         </button>
 
         <Link
@@ -444,7 +466,6 @@ function Navbar() {
         </Link>
       </div>
 
-      {/* Logout */}
       <div className="border-t border-slate-100 p-2">
         <button
           type="button"
@@ -456,6 +477,29 @@ function Navbar() {
         </button>
       </div>
     </>
+  );
+
+  // ----------------------------------
+  // Shared login dropdown
+  // ----------------------------------
+  const renderLoginMenu = () => (
+    <div className="absolute right-0 top-full z-[150] mt-2 w-38 overflow-hidden rounded-xl border border-slate-100 bg-white p-2 shadow-[0_12px_35px_rgba(15,23,42,0.14)]">
+      <Link
+        to="/patient-login"
+        onClick={closeMenus}
+        className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-blue-50 hover:text-[#0B63CE]"
+      >
+        Patient
+      </Link>
+
+      <Link
+        to="/doctor-login"
+        onClick={closeMenus}
+        className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-blue-50 hover:text-[#0B63CE]"
+      >
+        Doctor
+      </Link>
+    </div>
   );
 
   return (
@@ -552,30 +596,41 @@ function Navbar() {
             </Link>
 
             {!isLoggedIn ? (
-              <Link
-                to="/login"
-                onClick={closeMenus}
-                className="rounded-lg border border-[#0B63CE] bg-white px-5 py-2.5 text-sm font-semibold text-[#0B63CE] transition hover:bg-blue-50"
-              >
-                Login
-              </Link>
+              <div ref={desktopLoginRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setLoginOpen((prev) => !prev)}
+                  aria-expanded={loginOpen}
+                  className="flex items-center gap-2 rounded-lg border border-[#0B63CE] bg-white px-5 py-2.5 text-sm font-semibold text-[#0B63CE] transition hover:bg-blue-50"
+                >
+                  Login
+
+                  <ChevronDown
+                    size={16}
+                    className={`transition-transform ${
+                      loginOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {loginOpen && renderLoginMenu()}
+              </div>
             ) : (
               <>
-                {/* Desktop notifications */}
-                
-<Link
-  to="/notifications"
-  aria-label="Notifications"
-  className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 hover:text-[#0B63CE]"
->
-  <Bell size={21} />
+                {/* DESKTOP NOTIFICATIONS */}
+                <Link
+                  to="/notifications"
+                  aria-label="Notifications"
+                  className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 hover:text-[#0B63CE]"
+                >
+                  <Bell size={21} />
 
-  <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
-    3
-  </span>
-</Link>
+                  <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                    3
+                  </span>
+                </Link>
 
-                {/* Desktop profile dropdown */}
+                {/* DESKTOP PROFILE */}
                 <div ref={desktopProfileRef} className="relative">
                   <button
                     type="button"
@@ -601,7 +656,9 @@ function Navbar() {
                         {userName}
                       </p>
 
-                      <p className="text-[10px] text-slate-500">Patient</p>
+                      <p className="text-[10px] text-slate-500">
+                        {localStorage.getItem("userRole") || "Patient"}
+                      </p>
                     </div>
 
                     <ChevronDown
@@ -626,27 +683,27 @@ function Navbar() {
           <div className="flex items-center gap-1 sm:gap-2 lg:hidden">
             {isLoggedIn && (
               <>
-                {/* Mobile notifications */}
-                
-<Link
-  to="/notifications"
-  aria-label="Notifications"
-  className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 hover:text-[#0B63CE]"
->
-  <Bell size={21} />
+                {/* MOBILE NOTIFICATIONS */}
+                <Link
+                  to="/notifications"
+                  aria-label="Notifications"
+                  className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 hover:text-[#0B63CE]"
+                >
+                  <Bell size={21} />
 
-  <span className="absolute right-0 top-0 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-white">
-    3
-  </span>
-</Link>
+                  <span className="absolute right-0 top-0 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white ring-2 ring-white">
+                    3
+                  </span>
+                </Link>
 
-                {/* Mobile profile dropdown */}
+                {/* MOBILE PROFILE */}
                 <div ref={mobileProfileRef} className="relative">
                   <button
                     type="button"
                     onClick={() => {
                       setProfileOpen((prev) => !prev);
                       setMenuOpen(false);
+                      setLoginOpen(false);
                     }}
                     className="flex min-w-[44px] flex-col items-center justify-center rounded-lg px-1 py-0.5 transition hover:bg-slate-50"
                     aria-label="Open profile menu"
@@ -678,12 +735,13 @@ function Navbar() {
               </>
             )}
 
-            {/* Hamburger */}
+            {/* HAMBURGER */}
             <button
               type="button"
               onClick={() => {
                 setMenuOpen((prev) => !prev);
                 setProfileOpen(false);
+                setLoginOpen(false);
               }}
               className="relative z-[110] flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-[#0B63CE] hover:text-[#0B63CE]"
               aria-label="Toggle navigation menu"
@@ -702,9 +760,8 @@ function Navbar() {
         {menuOpen && (
           <div className="relative z-[105] border-t border-slate-100 bg-white py-4 lg:hidden">
             <nav className="flex flex-col gap-1">
-              {/* TOP ACTION BUTTONS — Always visible */}
+              {/* TOP ACTION BUTTONS */}
               <div className="grid grid-cols-2 gap-2 border-b border-slate-100 px-3 pb-4">
-                {/* Call Us */}
                 <a
                   href="tel:+923001234567"
                   aria-label="Call Telemedicine"
@@ -714,7 +771,6 @@ function Navbar() {
                   <span>Call Us</span>
                 </a>
 
-                {/* Book Appointment */}
                 <Link
                   to="/book-appointment"
                   onClick={closeMenus}
@@ -774,16 +830,47 @@ function Navbar() {
                 FAQ
               </button>
 
-              {/* LOGGED-OUT USER */}
+              {/* LOGGED-OUT USER: LOGIN DROPDOWN */}
               {!isLoggedIn && (
-                <div className="mt-3 border-t border-slate-100 px-3 pt-3">
-                  <Link
-                    to="/login"
-                    onClick={closeMenus}
-                    className="flex w-full items-center justify-center rounded-xl border border-[#0B63CE] px-4 py-3 text-sm font-semibold text-[#0B63CE] transition hover:bg-blue-50"
+                <div
+                  ref={mobileLoginRef}
+                  className="mt-3 border-t border-slate-100 px-3 pt-3"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setLoginOpen((prev) => !prev)}
+                    aria-expanded={loginOpen}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#0B63CE] px-4 py-3 text-sm font-semibold text-[#0B63CE] transition hover:bg-blue-50"
                   >
                     Login to Your Account
-                  </Link>
+
+                    <ChevronDown
+                      size={17}
+                      className={`transition-transform ${
+                        loginOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {loginOpen && (
+                    <div className="mt-2 space-y-1 rounded-xl border border-slate-100 bg-white p-2 shadow-sm">
+                      <Link
+                        to="/patient-login"
+                        onClick={closeMenus}
+                        className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-blue-50 hover:text-[#0B63CE]"
+                      >
+                        Patient
+                      </Link>
+
+                      <Link
+                        to="/doctor-login"
+                        onClick={closeMenus}
+                        className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-blue-50 hover:text-[#0B63CE]"
+                      >
+                        Doctor
+                      </Link>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -794,17 +881,15 @@ function Navbar() {
                     My Account
                   </p>
 
-                  {/* Dashboard */}
                   <button
                     type="button"
                     onClick={goToDashboard}
                     className="flex w-full items-center gap-3 rounded-xl bg-blue-50 px-3 py-3 text-left text-sm font-semibold text-[#0B63CE] transition hover:bg-blue-100"
                   >
                     <LayoutDashboard size={18} />
-                    Patient Dashboard
+                    Dashboard
                   </button>
 
-                  {/* Profile */}
                   <Link
                     to="/my-profile"
                     onClick={closeMenus}
@@ -814,7 +899,6 @@ function Navbar() {
                     My Profile
                   </Link>
 
-                  {/* Appointments */}
                   <Link
                     to="/appointments"
                     onClick={closeMenus}
@@ -824,7 +908,6 @@ function Navbar() {
                     My Appointments
                   </Link>
 
-                  {/* Prescriptions */}
                   <Link
                     to="/prescriptions"
                     onClick={closeMenus}
@@ -834,7 +917,6 @@ function Navbar() {
                     My Prescriptions
                   </Link>
 
-                  {/* Logout */}
                   <div className="mt-3 border-t border-slate-100 pt-3">
                     <button
                       type="button"
