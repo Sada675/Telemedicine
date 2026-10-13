@@ -171,15 +171,15 @@ return ( <div className="min-h-screen overflow-x-hidden bg-[#f8faf9]"> <Navbar /
 
     {/* HERO CARD */}
     <section
-      className="
-        relative isolate flex min-h-[300px] items-center
-        overflow-hidden rounded-[24px]
-        bg-gradient-to-r from-[#410200] via-[#536276] to-[#151b54]
-        px-5 py-8 shadow-xl
-        sm:min-h-[340px] sm:rounded-[30px] sm:px-8
-        lg:min-h-[390px] lg:px-12 lg:py-10
-      "
-    >
+  className="
+    relative isolate flex min-h-[350px] items-center
+    overflow-hidden rounded-[24px]
+    bg-gradient-to-r from-[#410200] via-[#536276] to-[#151b54]
+    px-4 py-7 shadow-xl
+    sm:min-h-[340px] sm:rounded-[30px] sm:px-8 sm:py-8
+    lg:min-h-[390px] lg:px-12 lg:py-10
+  "
+>
       {/* Background glow */}
       <div className="pointer-events-none absolute -left-20 -top-24 -z-10 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
 
@@ -189,77 +189,106 @@ return ( <div className="min-h-screen overflow-x-hidden bg-[#f8faf9]"> <Navbar /
       <div className="pointer-events-none absolute -right-20 -top-20 -z-10 h-64 w-64 rounded-full border-[35px] border-white/5 sm:h-80 sm:w-80" />
 
       {/* HERO CONTENT */}
-      <div className="relative z-20 w-[68%] max-w-2xl text-white sm:w-[65%] lg:w-[62%]">
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/90 backdrop-blur-sm sm:text-sm">
-          <ShieldCheck size={16} />
-          Doctor Workspace
-        </div>
+      {/* HERO CONTENT */}
+<div
+  className="
+    relative z-20
+    w-[72%] max-w-2xl
+    text-white
+    sm:w-[65%]
+    lg:w-[62%]
+  "
+>
+  {/* Badge */}
+  <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1.5 text-[10px] font-medium text-white/90 backdrop-blur-sm sm:mb-4 sm:gap-2 sm:px-3 sm:text-sm">
+    <ShieldCheck size={14} />
+    Doctor Workspace
+  </div>
 
-        <h2 className="text-2xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-          Welcome back,
-          <br />
-          <span className="text-[#F9A603]">Dr. Munib!</span>
-        </h2>
+  {/* Heading */}
+  <h2 className="text-[22px] font-bold leading-tight sm:text-4xl lg:text-5xl">
+    Welcome back,
+    <br />
+    <span className="text-[#F9A603]">Dr. Munib!</span>
+  </h2>
 
-        <p className="mt-3 text-xs font-medium text-blue-100 sm:text-sm">
-          Medical Specialist
-          <span className="mx-2 text-white/40">•</span>
-          Online Consultations
-        </p>
+  {/* Specialty */}
+  <p className="mt-2 text-[10px] font-medium text-blue-100 sm:mt-3 sm:text-sm">
+    Medical Specialist
+    <span className="mx-1 text-white/40 sm:mx-2">•</span>
+    <span className="block sm:inline">Online Consultations</span>
+  </p>
 
-        <p className="mt-4 max-w-md text-xs leading-5 text-white/80 sm:text-sm sm:leading-6 lg:text-base">
-          Your patients are counting on you. Review appointment
-          requests, organize your schedule, and provide quality
-          care from one place.
-        </p>
+  {/* Description */}
+  <p className="mt-3 max-w-md text-[11px] leading-5 text-white/80 sm:mt-4 sm:text-sm sm:leading-6 lg:text-base">
+    Your patients are counting on you. Review appointment requests,
+    organize your schedule, and provide quality care from one place.
+  </p>
 
-        {/* Pending summary */}
-        <div className="mt-5 inline-flex max-w-full items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 backdrop-blur-sm sm:mt-6 sm:px-4">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F9A603]/20 text-[#F9A603]">
-            <Clock3 size={17} />
-          </span>
+  {/* Pending Requests */}
+  <div className="mt-4 inline-flex max-w-full items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-2.5 py-2 backdrop-blur-sm sm:mt-6 sm:px-4 sm:py-2.5">
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F9A603]/20 text-[#F9A603]">
+      <Clock3 size={16} />
+    </span>
 
-          <span className="min-w-0">
-            <span className="block text-sm font-bold text-white">
-              {pendingAppointments} pending{" "}
-              {pendingAppointments === 1 ? "request" : "requests"}
-            </span>
+    <span className="min-w-0">
+      <span className="block text-xs font-bold text-white sm:text-sm">
+        {pendingAppointments} pending{" "}
+        {pendingAppointments === 1 ? "request" : "requests"}
+      </span>
 
-            <span className="mt-0.5 block text-[10px] text-white/70 sm:text-xs ">
-              Review your appointment requests
-            </span>
-          </span>
-        </div>
+      <span className="mt-0.5 block text-[9px] leading-4 text-white/70 sm:text-xs">
+        Review your appointment requests
+      </span>
+    </span>
+  </div>
 
-        <Link
-          to="/doctor-appointments"
-          className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-[#183b3b] shadow-lg transition hover:bg-blue-50 sm:mt-6 sm:ml-6 sm:px-5 sm:py-3 sm:text-sm"
-        >
-          Review Appointments
-          <ArrowRight size={16} />
-        </Link>
-      </div>
-
+  {/* Review Appointments */}
+  <div>
+    <Link
+      to="/doctor-appointments"
+      className="
+        mt-4 inline-flex items-center gap-2
+        rounded-full bg-white
+        px-3.5 py-2.5
+        text-[11px] font-bold text-[#183b3b]
+        shadow-lg transition hover:bg-blue-50
+        sm:mt-6 sm:px-5 sm:py-3 sm:text-sm
+      "
+    >
+      Review Appointments
+      <ArrowRight size={15} />
+    </Link>
+  </div>
+</div>
       {/* DOCTOR IMAGE */}
-      <div className="absolute bottom-0 right-10 flex h-full w-[40%] items-end justify-end sm:w-[38%] lg:w-[39%]">
-        {/* Image background glow */}
-        <div className="absolute bottom-0 right-0 h-3/4 w-full bg-gradient-to-t from-[#151b54]/70 via-white/5 to-transparent blur-2xl" />
+      {/* DOCTOR IMAGE */}
+<div
+  className="
+    absolute bottom-0 right-0
+    flex h-full w-[35%]
+    items-end justify-end
+    sm:right-5 sm:w-[38%]
+    lg:right-10 lg:w-[39%]
+  "
+>
+  {/* Image background glow */}
+  <div className="pointer-events-none absolute bottom-0 right-0 h-3/4 w-full bg-gradient-to-t from-[#151b54]/70 via-white/5 to-transparent blur-2xl" />
 
-        <img
-          src={drMunibImage}
-          alt="Dr. Munib, Medical Specialist"
-          className="
-            relative z-10
-            h-[220px] w-full max-w-[180px]
-            object-cover object-top
-            rounded-t-[75px] rounded-b-none
-            [mask-image:linear-gradient(to_bottom,black_85%,transparent_100%)]
-            drop-shadow-[0_0_22px_rgba(255,255,255,0.15)]
-            sm:h-[290px] sm:max-w-[240px] sm:rounded-t-[105px]
-            lg:h-[365px] lg:max-w-[320px] lg:rounded-t-[125px]
-          "
-        />
-      </div>
+  <img
+    src={drMunibImage}
+    alt="Dr. Munib, Medical Specialist"
+    className="
+      relative z-10
+      h-[180px] w-full max-w-[115px]
+      rounded-t-[55px] object-cover object-top
+      [mask-image:linear-gradient(to_bottom,black_88%,transparent_100%)]
+      drop-shadow-[0_0_18px_rgba(255,255,255,0.15)]
+      sm:h-[290px] sm:max-w-[240px] sm:rounded-t-[105px]
+      lg:h-[365px] lg:max-w-[320px] lg:rounded-t-[125px]
+    "
+  />
+</div>
     </section>
 
     {/* STATISTICS */}
