@@ -17,6 +17,9 @@ import Consultation from "./pages/Consultation";
 import MyProfile from "./pages/MyProfile";
 import Notifications from "./pages/Notifications";
 import DoctorDashboard from "./pages/DoctorDashboard";
+import DoctorAppointments from "./pages/DoctorAppointments";
+import DoctorPrescriptions from "./pages/DoctorPrescriptions";
+import DoctorAvailability from "./pages/DoctorAvailability";
 
 function App() {
   return (
@@ -38,10 +41,11 @@ function App() {
       <Route path="/consultation" element={<Consultation />} />
       <Route path="/my-profile" element={<MyProfile />} />
       <Route path="/notifications" element={<Notifications />} />
-      <Route
-  path="/doctor-dashboard"
-  element={<DoctorDashboard />}
-/>
+      <Route path="/doctor-dashboard" element={<DoctorDashboard />}/>
+      <Route path="/doctor-appointments" element={<DoctorAppointments />}/>
+      <Route path="/doctor-prescriptions" element={<DoctorPrescriptions />}/>
+      <Route path="/doctor-availability" element={<DoctorAvailability />}/>
+
     </Routes>
   );
 }
