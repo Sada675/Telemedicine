@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -34,6 +34,15 @@ type Appointment = {
   date: string;
   status: "Approved" | "Pending";
 };
+
+type AvailabilitySettings = {
+  schedule: DaySchedule[];
+  appointmentDuration: string;
+  maxAppointments: string;
+  consultationFee: string;
+};
+
+const STORAGE_KEY = "doctorAvailabilitySettings";
 
 const initialSchedule: DaySchedule[] = [
   {
@@ -132,9 +141,11 @@ function DoctorAvailability() {
   const [appointmentDuration, setAppointmentDuration] =
     useState("30");
 
-  const [maxAppointments, setMaxAppointments] = useState("12");
+  const [maxAppointments, setMaxAppointments] =
+    useState("12");
 
-  const [consultationFee, setConsultationFee] = useState("3000");
+  const [consultationFee, setConsultationFee] =
+    useState("3000");
 
   const [appointments, setAppointments] =
     useState<Appointment[]>(initialAppointments);
@@ -148,6 +159,69 @@ function DoctorAvailability() {
   const [feeError, setFeeError] = useState("");
 
   const [activeDay, setActiveDay] = useState("Monday");
+
+  // Load previously saved availability settings.
+  useEffect(() => {
+    const loadSavedSettings = () => {
+      const savedSettings = localStorage.getItem(STORAGE_KEY);
+
+      if (!savedSettings) {
+        return;
+      }
+
+      try {
+        const settings: AvailabilitySettings =
+          JSON.parse(savedSettings);
+
+        if (Array.isArray(settings.schedule)) {
+          setSchedule(settings.schedule);
+        }
+
+        if (settings.appointmentDuration !== undefined) {
+          setAppointmentDuration(
+            String(settings.appointmentDuration)
+          );
+        }
+
+        if (settings.maxAppointments !== undefined) {
+          setMaxAppointments(
+            String(settings.maxAppointments)
+          );
+        }
+
+        if (settings.consultationFee !== undefined) {
+          setConsultationFee(
+            String(settings.consultationFee)
+          );
+        }
+      } catch {
+        console.error(
+          "Unable to load saved doctor availability."
+        );
+      }
+    };
+
+    loadSavedSettings();
+
+    // Listen for updates from another tab or connected page.
+    window.addEventListener("storage", loadSavedSettings);
+    window.addEventListener(
+      "availabilityUpdated",
+      loadSavedSettings
+    );
+
+    return () => {
+      window.removeEventListener(
+        "storage",
+        loadSavedSettings
+      );
+
+      window.removeEventListener(
+        "availabilityUpdated",
+        loadSavedSettings
+      );
+    };
+  }, []);
 
   const updateSchedule = (
     dayName: string,
@@ -164,19 +238,27 @@ function DoctorAvailability() {
 
     setSaved(false);
     setScheduleError("");
+    setFeeError("");
   };
 
   const handleSaveSchedule = () => {
-    const enabledDays = schedule.filter((day) => day.enabled);
+    setScheduleError("");
+    setFeeError("");
+    setSaved(false);
 
+    const enabledDays = schedule.filter(
+      (day) => day.enabled
+    );
+
+    // At least one working day is required.
     if (enabledDays.length === 0) {
       setScheduleError(
         "Please make at least one day available."
       );
-      setSaved(false);
       return;
     }
 
+    // Validate working hours.
     const invalidDay = enabledDays.find(
       (day) => day.startTime >= day.endTime
     );
@@ -185,10 +267,10 @@ function DoctorAvailability() {
       setScheduleError(
         `${invalidDay.day}: End time must be later than start time.`
       );
-      setSaved(false);
       return;
     }
 
+    // Validate break times.
     const invalidBreak = enabledDays.find(
       (day) =>
         day.breakStart < day.startTime ||
@@ -200,11 +282,22 @@ function DoctorAvailability() {
       setScheduleError(
         `${invalidBreak.day}: Please enter a valid break within working hours.`
       );
-      setSaved(false);
       return;
     }
 
+    // Validate appointment duration.
+    const validDurations = ["15", "30", "45", "60"];
+
+    if (!validDurations.includes(appointmentDuration)) {
+      setScheduleError(
+        "Please select a valid appointment duration."
+      );
+      return;
+    }
+
+    // Validate maximum appointments.
     if (
+      maxAppointments.trim() === "" ||
       !Number.isFinite(Number(maxAppointments)) ||
       Number(maxAppointments) < 1 ||
       !Number.isInteger(Number(maxAppointments))
@@ -212,85 +305,67 @@ function DoctorAvailability() {
       setScheduleError(
         "Maximum appointments must be a whole number greater than zero."
       );
-      setSaved(false);
       return;
     }
 
+    // Validate consultation fee.
     if (
+      consultationFee.trim() === "" ||
       !Number.isFinite(Number(consultationFee)) ||
-      Number(consultationFee) < 0 ||
-      consultationFee.trim() === ""
+      Number(consultationFee) < 0
     ) {
-      setFeeError("Please enter a valid consultation fee.");
-      setSaved(false);
+      setFeeError(
+        "Please enter a valid consultation fee."
+      );
       return;
     }
 
-    setScheduleError("");
-    setFeeError("");
-
-    const settings = {
+    const settings: AvailabilitySettings = {
       schedule,
       appointmentDuration,
       maxAppointments,
       consultationFee,
     };
 
-    localStorage.setItem(
-      "doctorAvailabilitySettings",
-      JSON.stringify(settings)
-    );
-
-    setSaved(true);
-  };
-
-
-
-  // Load saved settings when the page opens.
-  useState(() => {
-    const savedSettings = localStorage.getItem(
-      "doctorAvailabilitySettings"
-    );
-
-    if (!savedSettings) return;
-
     try {
-      const settings = JSON.parse(savedSettings);
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(settings)
+      );
 
-      if (Array.isArray(settings.schedule)) {
-        setSchedule(settings.schedule);
-      }
+      // Notify other components in this browser tab.
+      window.dispatchEvent(
+        new Event("availabilityUpdated")
+      );
 
-      if (settings.appointmentDuration) {
-        setAppointmentDuration(settings.appointmentDuration);
-      }
-
-      if (settings.maxAppointments) {
-        setMaxAppointments(settings.maxAppointments);
-      }
-
-      if (settings.consultationFee !== undefined) {
-        setConsultationFee(String(settings.consultationFee));
-      }
+      setSaved(true);
     } catch {
-      // Ignore invalid local storage data.
+      setScheduleError(
+        "Unable to save your settings. Please check your browser storage."
+      );
     }
-  });
+  };
 
   const getWeekDates = () => {
     const today = new Date();
     const dayOfWeek = today.getDay();
 
-    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const mondayOffset =
+      dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
 
     const monday = new Date(today);
+
     monday.setDate(
-      today.getDate() + mondayOffset + weekOffset * 7
+      today.getDate() +
+        mondayOffset +
+        weekOffset * 7
     );
 
     return Array.from({ length: 7 }, (_, index) => {
       const date = new Date(monday);
+
       date.setDate(monday.getDate() + index);
+
       return date;
     });
   };
@@ -310,11 +385,13 @@ function DoctorAvailability() {
   ).length;
 
   const approvedAppointments = appointments.filter(
-    (appointment) => appointment.status === "Approved"
+    (appointment) =>
+      appointment.status === "Approved"
   ).length;
 
   const pendingAppointments = appointments.filter(
-    (appointment) => appointment.status === "Pending"
+    (appointment) =>
+      appointment.status === "Pending"
   ).length;
 
   const activeDaySchedule = schedule.find(
@@ -502,7 +579,9 @@ function DoctorAvailability() {
                             : "text-gray-400"
                         }`}
                       >
-                        {day.enabled ? "Available" : "Unavailable"}
+                        {day.enabled
+                          ? "Available"
+                          : "Unavailable"}
                       </p>
                     </div>
 
@@ -792,7 +871,10 @@ function DoctorAvailability() {
               <p className="mt-1 text-xs leading-5 text-gray-600">
                 {appointmentDuration}-minute appointments · Up to{" "}
                 {maxAppointments || "0"} appointments per day · PKR{" "}
-                {Number(consultationFee || 0).toLocaleString("en-PK")} per consultation
+                {Number(
+                  consultationFee || 0
+                ).toLocaleString("en-PK")}{" "}
+                per consultation
               </p>
             </div>
           </div>
@@ -843,15 +925,17 @@ function DoctorAvailability() {
 
           <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 sm:p-6 lg:grid-cols-7">
             {weekDates.map((date) => {
-              const dayName = date.toLocaleDateString("en-US", {
-                weekday: "long",
-              });
+              const dayName = date.toLocaleDateString(
+                "en-US",
+                { weekday: "long" }
+              );
 
               const daySchedule = schedule.find(
                 (day) => day.day === dayName
               );
 
-              const isToday = date.toDateString() === todayKey;
+              const isToday =
+                date.toDateString() === todayKey;
 
               return (
                 <button

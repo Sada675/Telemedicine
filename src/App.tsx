@@ -20,6 +20,7 @@ import DoctorDashboard from "./pages/DoctorDashboard";
 import DoctorAppointments from "./pages/DoctorAppointments";
 import DoctorPrescriptions from "./pages/DoctorPrescriptions";
 import DoctorAvailability from "./pages/DoctorAvailability";
+import OnlineConsultation from "./pages/OnlineConsultation";
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
       <Route path="/doctor-appointments" element={<DoctorAppointments />}/>
       <Route path="/doctor-prescriptions" element={<DoctorPrescriptions />}/>
       <Route path="/doctor-availability" element={<DoctorAvailability />}/>
+      <Route path="/online-consultation" element={<OnlineConsultation />}/>
 
     </Routes>
   );

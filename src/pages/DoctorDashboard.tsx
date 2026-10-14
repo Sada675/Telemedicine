@@ -4,7 +4,6 @@ import {
   CalendarDays,
   Clock3,
   CheckCircle2,
-  Users,
   ArrowRight,
   Video,
   FileText,
@@ -682,30 +681,7 @@ function DoctorDashboard() {
   />
 </Link>
 
-{/* PATIENT PORTAL */}
-<Link
-  to="/patient-dashboard"
-  className="group flex items-center gap-3 rounded-xl border border-slate-100 p-3 transition hover:border-blue-200 hover:bg-blue-50/50"
->
-  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0B63CE]">
-    <Users size={20} />
-  </span>
 
-  <span className="min-w-0 flex-1">
-    <span className="block text-sm font-semibold text-slate-800">
-      Patient Portal
-    </span>
-
-    <span className="mt-1 block text-xs text-slate-500">
-      Preview the patient dashboard
-    </span>
-  </span>
-
-  <ArrowRight
-    size={16}
-    className="shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-[#0B63CE]"
-  />
-</Link>
   </div>
 </div>
 

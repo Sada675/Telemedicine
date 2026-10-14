@@ -16,6 +16,7 @@ import {
   X,
   XCircle,
   Stethoscope,
+  Video,
 } from "lucide-react";
 
 import Navbar from "../components/Navbar";
@@ -137,7 +138,6 @@ function DoctorAppointments() {
     );
 
   const [searchTerm, setSearchTerm] = useState("");
-
   const [dateFilter, setDateFilter] = useState("All Dates");
 
   const [selectedAppointment, setSelectedAppointment] =
@@ -145,14 +145,12 @@ function DoctorAppointments() {
 
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Keep the selected filter synchronized with the URL.
   useEffect(() => {
     setActiveFilter(
       getValidFilter(searchParams.get("filter"))
     );
   }, [searchParams]);
 
-  // Change the selected filter and update the URL.
   const handleFilterChange = (filter: AppointmentFilter) => {
     setActiveFilter(filter);
 
@@ -161,7 +159,6 @@ function DoctorAppointments() {
     );
   };
 
-  // Appointment status update.
   const updateStatus = (
     id: number,
     status: "Approved" | "Rejected"
@@ -191,7 +188,6 @@ function DoctorAppointments() {
     }, 3000);
   };
 
-  // Statistics.
   const stats = [
     {
       title: "Total Appointments",
@@ -237,7 +233,6 @@ function DoctorAppointments() {
     },
   ];
 
-  // Search and filter appointments.
   const filteredAppointments = useMemo(() => {
     const normalizedSearch = searchTerm.toLowerCase().trim();
 
@@ -265,7 +260,6 @@ function DoctorAppointments() {
     });
   }, [appointments, activeFilter, searchTerm, dateFilter]);
 
-  // Reset all filters and remove the filter from the URL.
   const clearFilters = () => {
     setActiveFilter("All");
     setSearchTerm("");
@@ -273,12 +267,26 @@ function DoctorAppointments() {
     setSearchParams({});
   };
 
+  // Pass the selected appointment's details to the consultation page.
+  const getConsultationUrl = (appointment: Appointment) => {
+    const params = new URLSearchParams({
+      appointmentId: String(appointment.id),
+      patient: appointment.patient,
+      email: appointment.email,
+      date: appointment.date,
+      time: appointment.time,
+      type: appointment.type,
+      reason: appointment.reason,
+    });
+
+    return `/online-consultation?${params.toString()}`;
+  };
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f8faf9]">
       <Navbar />
 
       <main className="mx-auto w-full max-w-6xl px-4 pb-12 pt-28 sm:px-6 lg:px-8">
-
         {/* PAGE HEADER */}
         <section className="mb-7">
           <Link
@@ -367,8 +375,6 @@ function DoctorAppointments() {
 
         {/* MAIN APPOINTMENTS SECTION */}
         <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-6">
-
-          {/* SECTION HEADER */}
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div>
               <h2 className="text-lg font-bold text-[#183b3b] sm:text-xl">
@@ -404,8 +410,6 @@ function DoctorAppointments() {
 
           {/* FILTERS AND SEARCH */}
           <div className="mt-6 space-y-4">
-
-            {/* STATUS FILTER TABS */}
             <div className="flex gap-2 overflow-x-auto pb-2">
               {filters.map((filter) => {
                 const count =
@@ -444,7 +448,6 @@ function DoctorAppointments() {
               })}
             </div>
 
-            {/* SEARCH + DATE FILTER */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
               <div className="relative">
                 <Search
@@ -518,7 +521,6 @@ function DoctorAppointments() {
                   className="rounded-2xl border border-slate-100 p-4 transition hover:border-blue-100 hover:shadow-sm sm:p-5"
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-
                     {/* PATIENT INFORMATION */}
                     <div className="flex min-w-0 items-start gap-3 sm:gap-4">
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e5f4f2] text-sm font-bold text-[#245b5b] sm:h-14 sm:w-14">
@@ -612,10 +614,20 @@ function DoctorAppointments() {
                       )}
 
                       {appointment.status === "Approved" && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-                          <CheckCircle2 size={15} />
-                          Confirmed
-                        </span>
+                        <>
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+                            <CheckCircle2 size={15} />
+                            Confirmed
+                          </span>
+
+                          <Link
+                            to={getConsultationUrl(appointment)}
+                            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0B63CE] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0955AE]"
+                          >
+                            <Video size={16} />
+                            Start Consultation
+                          </Link>
+                        </>
                       )}
 
                       {appointment.status === "Completed" && (
@@ -645,8 +657,6 @@ function DoctorAppointments() {
                 Showing {filteredAppointments.length} of{" "}
                 {appointments.length} appointments
               </p>
-
-              
             </div>
           )}
         </section>
@@ -712,7 +722,7 @@ function DoctorAppointments() {
               </div>
             </div>
 
-            {/* DETAILS */}
+            {/* APPOINTMENT DETAILS */}
             <div className="mt-5 space-y-5">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
@@ -818,6 +828,24 @@ function DoctorAppointments() {
                 >
                   <X size={17} />
                   Reject
+                </button>
+              </div>
+            ) : selectedAppointment.status === "Approved" ? (
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  to={getConsultationUrl(selectedAppointment)}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#0B63CE] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0955AE]"
+                >
+                  <Video size={17} />
+                  Start Consultation
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedAppointment(null)}
+                  className="rounded-full border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                >
+                  Close Details
                 </button>
               </div>
             ) : (
