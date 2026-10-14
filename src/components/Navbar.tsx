@@ -14,9 +14,10 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 
-const PROFILE_STORAGE_KEY = "telemedicinePatientProfile";
+const PATIENT_PROFILE_KEY = "telemedicinePatientProfile";
+const DOCTOR_PROFILE_KEY = "telemedicineDoctorProfile";
 
-type SavedPatientProfile = {
+type SavedProfile = {
   fullName?: string;
   profilePicture?: string;
 };
@@ -35,20 +36,7 @@ function Navbar() {
     () => localStorage.getItem("userName") || "Sadaye Noor"
   );
 
-  const [profilePicture, setProfilePicture] = useState(() => {
-    try {
-      const savedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
-
-      if (savedProfile) {
-        const parsedProfile: SavedPatientProfile = JSON.parse(savedProfile);
-        return parsedProfile.profilePicture || "";
-      }
-    } catch (error) {
-      console.error("Unable to load profile picture:", error);
-    }
-
-    return "";
-  });
+  const [profilePicture, setProfilePicture] = useState("");
 
   const desktopProfileRef = useRef<HTMLDivElement>(null);
   const mobileProfileRef = useRef<HTMLDivElement>(null);
@@ -59,23 +47,55 @@ function Navbar() {
   const navigate = useNavigate();
 
   // ----------------------------------
+  // Current user role
+  // ----------------------------------
+  const userRole = (
+    localStorage.getItem("userRole") || "patient"
+  ).toLowerCase();
+
+  const isDoctor = userRole === "doctor";
+  const isAdmin = userRole === "admin";
+
+  const roleLabel = isDoctor
+    ? "Doctor"
+    : isAdmin
+      ? "Admin"
+      : "Patient";
+
+  // ----------------------------------
   // Synchronize authentication and profile
   // ----------------------------------
   const syncAuthState = useCallback(() => {
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";
 
+    const role = (
+      localStorage.getItem("userRole") || "patient"
+    ).toLowerCase();
+
     setIsLoggedIn(loggedIn);
 
+    const profileKey =
+      role === "doctor"
+        ? DOCTOR_PROFILE_KEY
+        : PATIENT_PROFILE_KEY;
+
+    const defaultName =
+      role === "doctor"
+        ? "Doctor"
+        : role === "admin"
+          ? "Admin"
+          : "Sadaye Noor";
+
     try {
-      const savedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
+      const savedProfile = localStorage.getItem(profileKey);
 
       if (savedProfile) {
-        const parsedProfile: SavedPatientProfile = JSON.parse(savedProfile);
+        const parsedProfile: SavedProfile = JSON.parse(savedProfile);
 
         const savedName =
           parsedProfile.fullName?.trim() ||
           localStorage.getItem("userName") ||
-          "Sadaye Noor";
+          defaultName;
 
         setUserName(savedName);
         setProfilePicture(parsedProfile.profilePicture || "");
@@ -84,13 +104,19 @@ function Navbar() {
           localStorage.setItem("userName", savedName);
         }
       } else {
-        setUserName(localStorage.getItem("userName") || "Sadaye Noor");
+        setUserName(
+          localStorage.getItem("userName") || defaultName
+        );
+
         setProfilePicture("");
       }
     } catch (error) {
       console.error("Unable to synchronize profile:", error);
 
-      setUserName(localStorage.getItem("userName") || "Sadaye Noor");
+      setUserName(
+        localStorage.getItem("userName") || defaultName
+      );
+
       setProfilePicture("");
     }
 
@@ -144,7 +170,7 @@ function Navbar() {
   };
 
   // ----------------------------------
-  // Go to Patient Dashboard
+  // Navigate to the correct dashboard
   // ----------------------------------
   const goToDashboard = () => {
     closeMenus();
@@ -156,7 +182,9 @@ function Navbar() {
       return;
     }
 
-    const role = localStorage.getItem("userRole")?.toLowerCase();
+    const role = (
+      localStorage.getItem("userRole") || "patient"
+    ).toLowerCase();
 
     if (role === "doctor") {
       navigate("/doctor-dashboard");
@@ -174,8 +202,8 @@ function Navbar() {
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("userName");
     localStorage.removeItem("userRole");
-    localStorage.removeItem(PROFILE_STORAGE_KEY);
 
+    // Keep saved profile information when logging out.
     setIsLoggedIn(false);
     setUserName("Sadaye Noor");
     setProfilePicture("");
@@ -396,6 +424,68 @@ function Navbar() {
     }`;
 
   // ----------------------------------
+  // Role-specific account links
+  // ----------------------------------
+  const renderAccountLinks = () => {
+    if (isDoctor) {
+      return (
+        <Link
+          to="/doctor-appointments"
+          onClick={closeMenus}
+          className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-[#0B63CE]"
+        >
+          <CalendarDays size={18} />
+          Doctor Appointments
+        </Link>
+      );
+    }
+
+    if (isAdmin) {
+      return (
+        <button
+          type="button"
+          onClick={goToDashboard}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-[#0B63CE]"
+        >
+          <LayoutDashboard size={18} />
+          Admin Dashboard
+        </button>
+      );
+    }
+
+    return (
+      <>
+        <Link
+          to="/my-profile"
+          onClick={closeMenus}
+          className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-[#0B63CE]"
+        >
+          <UserRound size={18} />
+          My Profile
+        </Link>
+
+        <Link
+          to="/appointments"
+          onClick={closeMenus}
+          className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-[#0B63CE]"
+        >
+          <CalendarDays size={18} />
+          My Appointments
+        </Link>
+
+        <Link
+          to="/prescriptions"
+          onClick={closeMenus}
+          className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-[#0B63CE]"
+        >
+          <FileText size={18} />
+          My Prescriptions
+        </Link>
+      </>
+    );
+  };
+
+  // ----------------------------------
   // Shared profile dropdown
   // ----------------------------------
   const renderProfileMenu = () => (
@@ -423,7 +513,7 @@ function Navbar() {
           </p>
 
           <p className="mt-0.5 text-xs text-slate-500">
-            Open Dashboard
+            {roleLabel} Dashboard
           </p>
         </div>
       </button>
@@ -438,32 +528,7 @@ function Navbar() {
           Dashboard
         </button>
 
-        <Link
-          to="/my-profile"
-          onClick={closeMenus}
-          className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-[#0B63CE]"
-        >
-          <UserRound size={18} />
-          My Profile
-        </Link>
-
-        <Link
-          to="/appointments"
-          onClick={closeMenus}
-          className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-[#0B63CE]"
-        >
-          <CalendarDays size={18} />
-          My Appointments
-        </Link>
-
-        <Link
-          to="/prescriptions"
-          onClick={closeMenus}
-          className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-[#0B63CE]"
-        >
-          <FileText size={18} />
-          My Prescriptions
-        </Link>
+        {renderAccountLinks()}
       </div>
 
       <div className="border-t border-slate-100 p-2">
@@ -657,7 +722,7 @@ function Navbar() {
                       </p>
 
                       <p className="text-[10px] text-slate-500">
-                        {localStorage.getItem("userRole") || "Patient"}
+                        {roleLabel}
                       </p>
                     </div>
 
@@ -878,7 +943,11 @@ function Navbar() {
               {isLoggedIn && (
                 <div className="mt-3 border-t border-slate-100 px-2 pt-3">
                   <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                    My Account
+                    {isDoctor
+                      ? "Doctor Account"
+                      : isAdmin
+                        ? "Admin Account"
+                        : "My Account"}
                   </p>
 
                   <button
@@ -890,32 +959,9 @@ function Navbar() {
                     Dashboard
                   </button>
 
-                  <Link
-                    to="/my-profile"
-                    onClick={closeMenus}
-                    className="mt-1 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-[#0B63CE]"
-                  >
-                    <UserRound size={18} />
-                    My Profile
-                  </Link>
-
-                  <Link
-                    to="/appointments"
-                    onClick={closeMenus}
-                    className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-[#0B63CE]"
-                  >
-                    <CalendarDays size={18} />
-                    My Appointments
-                  </Link>
-
-                  <Link
-                    to="/prescriptions"
-                    onClick={closeMenus}
-                    className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-[#0B63CE]"
-                  >
-                    <FileText size={18} />
-                    My Prescriptions
-                  </Link>
+                  <div className="mt-1">
+                    {renderAccountLinks()}
+                  </div>
 
                   <div className="mt-3 border-t border-slate-100 pt-3">
                     <button
