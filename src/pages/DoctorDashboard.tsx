@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   CalendarDays,
@@ -18,6 +18,141 @@ import {
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import drMunibImage from "../assets/dr-munib121.jpg";
+
+const DOCTORS_STORAGE_KEY = "telemedicineAdminDoctors";
+
+type DoctorProfile = {
+  id: string;
+  name: string;
+  specialty: string;
+  qualification: string;
+  pmdcNumber: string;
+  languages: string[];
+  feePKR: number;
+  feeUSD: number;
+  nextAvailableSlot: string;
+  status: "Active" | "Inactive";
+  image: string;
+};
+
+const defaultDoctorProfile: DoctorProfile = {
+  id: "munib",
+  name: "Dr. Munib",
+  specialty: "Medical Specialist",
+  qualification: "MBBS, FCPS",
+  pmdcNumber: "XXXXX-M",
+  languages: ["English", "Urdu"],
+  feePKR: 3000,
+  feeUSD: 25,
+  nextAvailableSlot: "Today • 04:00 PM",
+  status: "Active",
+  image: drMunibImage,
+};
+
+function getDoctorProfile(): DoctorProfile {
+  try {
+    const savedData = localStorage.getItem(DOCTORS_STORAGE_KEY);
+
+    if (!savedData) {
+      return defaultDoctorProfile;
+    }
+
+    const savedDoctors: unknown = JSON.parse(savedData);
+
+    if (!Array.isArray(savedDoctors)) {
+      return defaultDoctorProfile;
+    }
+
+    const savedDoctor = savedDoctors.find(
+      (doctor: Partial<DoctorProfile>) =>
+        doctor && String(doctor.id) === "munib"
+    ) as Partial<DoctorProfile> | undefined;
+
+    if (!savedDoctor) {
+      return defaultDoctorProfile;
+    }
+
+    const savedImage =
+      typeof savedDoctor.image === "string"
+        ? savedDoctor.image.trim()
+        : "";
+
+    const validImage =
+      savedImage.startsWith("data:image/") ||
+      savedImage.startsWith("https://") ||
+      savedImage.startsWith("http://");
+
+    return {
+      ...defaultDoctorProfile,
+      ...savedDoctor,
+
+      id: "munib",
+
+      name:
+        typeof savedDoctor.name === "string" &&
+        savedDoctor.name.trim()
+          ? savedDoctor.name
+          : defaultDoctorProfile.name,
+
+      specialty:
+        typeof savedDoctor.specialty === "string" &&
+        savedDoctor.specialty.trim()
+          ? savedDoctor.specialty
+          : defaultDoctorProfile.specialty,
+
+      qualification:
+        typeof savedDoctor.qualification === "string" &&
+        savedDoctor.qualification.trim()
+          ? savedDoctor.qualification
+          : defaultDoctorProfile.qualification,
+
+      pmdcNumber:
+        typeof savedDoctor.pmdcNumber === "string" &&
+        savedDoctor.pmdcNumber.trim()
+          ? savedDoctor.pmdcNumber
+          : defaultDoctorProfile.pmdcNumber,
+
+      languages:
+        Array.isArray(savedDoctor.languages) &&
+        savedDoctor.languages.every(
+          (language) => typeof language === "string"
+        )
+          ? savedDoctor.languages
+          : defaultDoctorProfile.languages,
+
+      feePKR:
+        typeof savedDoctor.feePKR === "number" &&
+        Number.isFinite(savedDoctor.feePKR)
+          ? savedDoctor.feePKR
+          : defaultDoctorProfile.feePKR,
+
+      feeUSD:
+        typeof savedDoctor.feeUSD === "number" &&
+        Number.isFinite(savedDoctor.feeUSD)
+          ? savedDoctor.feeUSD
+          : defaultDoctorProfile.feeUSD,
+
+      nextAvailableSlot:
+        typeof savedDoctor.nextAvailableSlot === "string" &&
+        savedDoctor.nextAvailableSlot.trim()
+          ? savedDoctor.nextAvailableSlot
+          : defaultDoctorProfile.nextAvailableSlot,
+
+      status:
+        savedDoctor.status === "Active" ||
+        savedDoctor.status === "Inactive"
+          ? savedDoctor.status
+          : defaultDoctorProfile.status,
+
+      image: validImage
+        ? savedImage
+        : defaultDoctorProfile.image,
+    };
+  } catch (error) {
+    console.error("Unable to load doctor profile:", error);
+    return defaultDoctorProfile;
+  }
+}
 
 type AppointmentStatus = "Pending" | "Approved" | "Rejected";
 
@@ -67,6 +202,9 @@ const initialAppointments: Appointment[] = [
 ];
 
 function DoctorDashboard() {
+  const [doctorProfile, setDoctorProfile] =
+    useState<DoctorProfile>(getDoctorProfile);
+
   const [appointments, setAppointments] =
     useState<Appointment[]>(initialAppointments);
 
@@ -74,6 +212,23 @@ function DoctorDashboard() {
     useState<Appointment | null>(null);
 
   const [successMessage, setSuccessMessage] = useState("");
+
+  // Admin ke updated doctor data ko load aur sync karein.
+  useEffect(() => {
+    const updateDoctorProfile = () => {
+      setDoctorProfile(getDoctorProfile());
+    };
+
+    updateDoctorProfile();
+
+    window.addEventListener("storage", updateDoctorProfile);
+    window.addEventListener("doctorsUpdated", updateDoctorProfile);
+
+    return () => {
+      window.removeEventListener("storage", updateDoctorProfile);
+      window.removeEventListener("doctorsUpdated", updateDoctorProfile);
+    };
+  }, []);
 
   const updateStatus = (
     id: number,
@@ -231,11 +386,13 @@ function DoctorDashboard() {
 
             <h2 className="text-[21px] font-bold leading-[1.4] text-white sm:text-3xl sm:leading-tight lg:text-[36px] xl:text-[40px]">
               Welcome back,{" "}
-              <span className="text-[#F9A603]">Dr. Munib!</span>
+              <span className="text-[#F9A603]">
+                {doctorProfile.name}!
+              </span>
             </h2>
 
             <p className="mt-2 text-[10px] leading-4 text-blue-100 sm:mt-3 sm:text-sm sm:leading-5">
-              Medical Specialist
+              {doctorProfile.specialty}
               <span className="mx-1 text-white/40 sm:mx-2">•</span>
               Online Consultations
             </p>
@@ -280,8 +437,12 @@ function DoctorDashboard() {
             <div className="absolute bottom-2 left-1/2 h-24 w-24 -translate-x-1/2 rounded-full bg-white/10 blur-2xl sm:bottom-4 sm:h-36 sm:w-36 lg:h-44 lg:w-44" />
 
             <img
-              src={drMunibImage}
-              alt="Dr. Munib, Medical Specialist"
+              src={doctorProfile.image}
+              alt={doctorProfile.name}
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = drMunibImage;
+              }}
               className="
                 relative z-10 block h-[145px] w-[112px]
                 rounded-t-[48px] object-cover object-top
@@ -317,64 +478,63 @@ function DoctorDashboard() {
         </section>
 
         {/* STATISTICS */}
-        {/* STATISTICS */}
-<section className="mt-8">
-  <div className="mb-4">
-    <h2 className="text-lg font-bold text-[#183b3b] sm:text-xl">
-      Practice Overview
-    </h2>
+        <section className="mt-8">
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-[#183b3b] sm:text-xl">
+              Practice Overview
+            </h2>
 
-    <p className="mt-1 text-sm text-slate-500">
-      A summary of your appointment activity.
-    </p>
-  </div>
-
-  <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-5">
-    {stats.map((stat) => {
-      const Icon = stat.icon;
-
-      const filter =
-        stat.title === "Total Appointments"
-          ? "All"
-          : stat.title === "Pending Requests"
-          ? "Pending"
-          : stat.title === "Approved"
-          ? "Approved"
-          : "Completed";
-
-      return (
-        <Link
-          key={stat.title}
-          to={`/doctor-appointments?filter=${filter}`}
-          aria-label={`View ${stat.title}`}
-          className="block rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-blue-100 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#0B63CE] sm:p-5"
-        >
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-xs font-medium text-slate-500 sm:text-sm">
-                {stat.title}
-              </p>
-
-              <p className="mt-3 text-3xl font-bold text-[#183b3b]">
-                {stat.value}
-              </p>
-            </div>
-
-            <div
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11 ${stat.iconBg} ${stat.iconColor}`}
-            >
-              <Icon size={21} />
-            </div>
+            <p className="mt-1 text-sm text-slate-500">
+              A summary of your appointment activity.
+            </p>
           </div>
 
-          <p className="mt-3 text-[11px] leading-4 text-slate-500 sm:text-xs">
-            {stat.description}
-          </p>
-        </Link>
-      );
-    })}
-  </div>
-</section>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-5">
+            {stats.map((stat) => {
+              const Icon = stat.icon;
+
+              const filter =
+                stat.title === "Total Appointments"
+                  ? "All"
+                  : stat.title === "Pending Requests"
+                    ? "Pending"
+                    : stat.title === "Approved"
+                      ? "Approved"
+                      : "Completed";
+
+              return (
+                <Link
+                  key={stat.title}
+                  to={`/doctor-appointments?filter=${filter}`}
+                  aria-label={`View ${stat.title}`}
+                  className="block rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-blue-100 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#0B63CE] sm:p-5"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-slate-500 sm:text-sm">
+                        {stat.title}
+                      </p>
+
+                      <p className="mt-3 text-3xl font-bold text-[#183b3b]">
+                        {stat.value}
+                      </p>
+                    </div>
+
+                    <div
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11 ${stat.iconBg} ${stat.iconColor}`}
+                    >
+                      <Icon size={21} />
+                    </div>
+                  </div>
+
+                  <p className="mt-3 text-[11px] leading-4 text-slate-500 sm:text-xs">
+                    {stat.description}
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
 
         {/* MAIN DASHBOARD GRID */}
         <section className="mt-8 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
@@ -595,96 +755,92 @@ function DoctorDashboard() {
             </div>
 
             {/* QUICK ACTIONS */}
+            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="text-lg font-bold text-[#183b3b]">
+                Quick Actions
+              </h2>
 
-<div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
-  <h2 className="text-lg font-bold text-[#183b3b]">
-    Quick Actions
-  </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Access your most-used tools.
+              </p>
 
-  <p className="mt-1 text-sm text-slate-500">
-    Access your most-used tools.
-  </p>
+              <div className="mt-4 space-y-3">
+                {/* MANAGE AVAILABILITY */}
+                <Link
+                  to="/doctor-availability"
+                  className="group flex items-center gap-3 rounded-xl border border-slate-100 p-3 transition hover:border-blue-200 hover:bg-blue-50/50"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0B63CE]">
+                    <Clock3 size={20} />
+                  </span>
 
-  <div className="mt-4 space-y-3">
-    {/* MANAGE AVAILABILITY */}
-    <Link
-      to="/doctor-availability"
-      className="group flex items-center gap-3 rounded-xl border border-slate-100 p-3 transition hover:border-blue-200 hover:bg-blue-50/50"
-    >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0B63CE]">
-        <Clock3 size={20} />
-      </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-slate-800">
+                      Manage Availability
+                    </span>
 
-  <span className="min-w-0 flex-1">
-    <span className="block text-sm font-semibold text-slate-800">
-      Manage Availability
-    </span>
+                    <span className="mt-1 block text-xs text-slate-500">
+                      Set your working hours and consultation slots
+                    </span>
+                  </span>
 
-    <span className="mt-1 block text-xs text-slate-500">
-      Set your working hours and consultation slots
-    </span>
-  </span>
+                  <ArrowRight
+                    size={16}
+                    className="shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-[#0B63CE]"
+                  />
+                </Link>
 
-  <ArrowRight
-    size={16}
-    className="shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-[#0B63CE]"
-  />
-</Link>
+                {/* PRESCRIPTIONS */}
+                <Link
+                  to="/doctor-prescriptions"
+                  className="group flex items-center gap-3 rounded-xl border border-slate-100 p-3 transition hover:border-blue-200 hover:bg-blue-50/50"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0B63CE]">
+                    <FileText size={20} />
+                  </span>
 
-{/* PRESCRIPTIONS */}
-<Link
-  to="/doctor-prescriptions"
-  className="group flex items-center gap-3 rounded-xl border border-slate-100 p-3 transition hover:border-blue-200 hover:bg-blue-50/50"
->
-  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0B63CE]">
-    <FileText size={20} />
-  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-slate-800">
+                      Prescriptions
+                    </span>
 
-  <span className="min-w-0 flex-1">
-    <span className="block text-sm font-semibold text-slate-800">
-      Prescriptions
-    </span>
+                    <span className="mt-1 block text-xs text-slate-500">
+                      Prepare patient prescriptions
+                    </span>
+                  </span>
 
-    <span className="mt-1 block text-xs text-slate-500">
-      Prepare patient prescriptions
-    </span>
-  </span>
+                  <ArrowRight
+                    size={16}
+                    className="shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-[#0B63CE]"
+                  />
+                </Link>
 
-  <ArrowRight
-    size={16}
-    className="shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-[#0B63CE]"
-  />
-</Link>
+                {/* ONLINE CONSULTATION */}
+                <Link
+                  to="/consultation"
+                  className="group flex items-center gap-3 rounded-xl border border-slate-100 p-3 transition hover:border-blue-200 hover:bg-blue-50/50"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0B63CE]">
+                    <Video size={20} />
+                  </span>
 
-{/* ONLINE CONSULTATION */}
-<Link
-  to="/consultation"
-  className="group flex items-center gap-3 rounded-xl border border-slate-100 p-3 transition hover:border-blue-200 hover:bg-blue-50/50"
->
-  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0B63CE]">
-    <Video size={20} />
-  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-slate-800">
+                      Online Consultation
+                    </span>
 
-  <span className="min-w-0 flex-1">
-    <span className="block text-sm font-semibold text-slate-800">
-      Online Consultation
-    </span>
+                    <span className="mt-1 block text-xs text-slate-500">
+                      Open the consultation room
+                    </span>
+                  </span>
 
-    <span className="mt-1 block text-xs text-slate-500">
-      Open the consultation room
-    </span>
-  </span>
-
-  <ArrowRight
-    size={16}
-    className="shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-[#0B63CE]"
-  />
-</Link>
-
-
-  </div>
-</div>
-
+                  <ArrowRight
+                    size={16}
+                    className="shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-[#0B63CE]"
+                  />
+                </Link>
+              </div>
+            </div>
 
             {/* PROFESSIONAL NOTE */}
             <div className="rounded-2xl border border-[#dcece8] bg-[#e5f4f2] p-4">

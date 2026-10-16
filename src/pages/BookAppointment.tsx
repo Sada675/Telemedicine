@@ -33,10 +33,12 @@ type Doctor = {
   name: string;
   specialty: string;
   qualifications: string;
+  pmdc: string;
   languages: string;
   feePKR: string;
   feeUSD: string;
   image: string;
+  status: "Active" | "Inactive";
 };
 
 type AvailableDate = {
@@ -47,31 +49,36 @@ type AvailableDate = {
   weekday: string;
 };
 
-const doctors: Doctor[] = [
+const DOCTORS_STORAGE_KEY = "telemedicineAdminDoctors";
+const AVAILABILITY_STORAGE_KEY = "doctorAvailabilitySettings";
+
+const defaultDoctors: Doctor[] = [
   {
     id: 1,
     name: "Dr. Munib",
     specialty: "Medical Specialist",
     qualifications: "MBBS, FCPS",
+    pmdc: "PMDC: XXXXX-M",
     languages: "English, Urdu",
     feePKR: "PKR 3,000",
     feeUSD: "$25",
     image: drMunib,
+    status: "Active",
   },
   {
     id: 2,
     name: "Dr. Nazli",
     specialty: "Medical Specialist",
     qualifications: "MBBS, FCPS",
+    pmdc: "PMDC: XXXXX-N",
     languages: "English, Urdu",
     feePKR: "PKR 3,000",
     feeUSD: "$25",
     image: ladyDoc,
+    status: "Active",
   },
 ];
 
-// Default schedule matches DoctorAvailability.tsx.
-// Saved settings will override these values for Dr. Munib.
 const defaultSchedule: DaySchedule[] = [
   {
     day: "Monday",
@@ -131,6 +138,190 @@ const defaultSchedule: DaySchedule[] = [
   },
 ];
 
+function formatPKR(value: number): string {
+  return `PKR ${value.toLocaleString("en-PK")}`;
+}
+
+function normalizeFee(
+  value: unknown,
+  currency: "PKR" | "USD",
+  fallback: string,
+): string {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return currency === "PKR"
+      ? formatPKR(value)
+      : `$${value.toLocaleString("en-US")}`;
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    const cleanedValue = value.trim();
+
+    if (currency === "PKR") {
+      const numericValue = Number(
+        cleanedValue.replace(/^PKR\s*/i, "").replace(/,/g, ""),
+      );
+
+      if (Number.isFinite(numericValue)) {
+        return formatPKR(numericValue);
+      }
+
+      return cleanedValue;
+    }
+
+    const numericValue = Number(
+      cleanedValue.replace(/^\$\s*/, "").replace(/,/g, ""),
+    );
+
+    if (Number.isFinite(numericValue)) {
+      return `$${numericValue.toLocaleString("en-US")}`;
+    }
+
+    return cleanedValue;
+  }
+
+  return fallback;
+}
+
+function getDoctors(): Doctor[] {
+  try {
+    const savedData = localStorage.getItem(DOCTORS_STORAGE_KEY);
+
+    if (!savedData) return defaultDoctors;
+
+    const savedDoctors: unknown = JSON.parse(savedData);
+
+    if (!Array.isArray(savedDoctors)) return defaultDoctors;
+
+    return defaultDoctors.map((defaultDoctor) => {
+      const savedDoctor = savedDoctors.find(
+        (doctor: Record<string, unknown>) =>
+          String(doctor.id) === String(defaultDoctor.id) ||
+          (defaultDoctor.id === 1 && doctor.id === "munib") ||
+          (defaultDoctor.id === 2 && doctor.id === "nazli"),
+      ) as Record<string, unknown> | undefined;
+
+      if (!savedDoctor) return defaultDoctor;
+
+      const qualification =
+        typeof savedDoctor.qualification === "string"
+          ? savedDoctor.qualification
+          : typeof savedDoctor.qualifications === "string"
+            ? savedDoctor.qualifications
+            : defaultDoctor.qualifications;
+
+      const pmdcValue =
+        typeof savedDoctor.pmdcNumber === "string"
+          ? savedDoctor.pmdcNumber
+          : typeof savedDoctor.pmdc === "string"
+            ? savedDoctor.pmdc
+            : defaultDoctor.pmdc;
+
+      const languages = Array.isArray(savedDoctor.languages)
+        ? savedDoctor.languages.join(", ")
+        : typeof savedDoctor.languages === "string"
+          ? savedDoctor.languages
+          : defaultDoctor.languages;
+
+      return {
+        ...defaultDoctor,
+
+        name:
+          typeof savedDoctor.name === "string" && savedDoctor.name.trim()
+            ? savedDoctor.name
+            : defaultDoctor.name,
+
+        specialty:
+          typeof savedDoctor.specialty === "string" &&
+          savedDoctor.specialty.trim()
+            ? savedDoctor.specialty
+            : defaultDoctor.specialty,
+
+        qualifications: qualification,
+
+        pmdc: pmdcValue.toUpperCase().startsWith("PMDC:")
+          ? pmdcValue
+          : `PMDC: ${pmdcValue}`,
+
+        languages,
+
+        feePKR: normalizeFee(
+          savedDoctor.feePKR,
+          "PKR",
+          defaultDoctor.feePKR,
+        ),
+
+        feeUSD: normalizeFee(
+          savedDoctor.feeUSD,
+          "USD",
+          defaultDoctor.feeUSD,
+        ),
+
+        image:
+  typeof savedDoctor.image === "string" &&
+  savedDoctor.image.trim() &&
+  (savedDoctor.image.startsWith("data:image/") ||
+    savedDoctor.image.startsWith("http://") ||
+    savedDoctor.image.startsWith("https://") ||
+    savedDoctor.image.startsWith("/"))
+    ? savedDoctor.image
+    : defaultDoctor.image,
+
+        status: savedDoctor.status === "Inactive" ? "Inactive" : "Active",
+      };
+    });
+  } catch (error) {
+    console.error("Unable to load doctor information:", error);
+    return defaultDoctors;
+  }
+}
+
+function getDefaultAvailability(): AvailabilitySettings {
+  return {
+    schedule: defaultSchedule,
+    appointmentDuration: "30",
+    maxAppointments: "10",
+    consultationFee: "3000",
+  };
+}
+
+function getAvailability(): AvailabilitySettings {
+  try {
+    const savedData = localStorage.getItem(AVAILABILITY_STORAGE_KEY);
+
+    if (!savedData) return getDefaultAvailability();
+
+    const parsed = JSON.parse(savedData) as Partial<AvailabilitySettings>;
+
+    if (!Array.isArray(parsed.schedule)) {
+      return getDefaultAvailability();
+    }
+
+    const schedule = defaultSchedule.map((defaultDay) => {
+      const savedDay = parsed.schedule?.find(
+        (item) => item.day === defaultDay.day,
+      );
+
+      if (!savedDay) return defaultDay;
+
+      return {
+        ...defaultDay,
+        ...savedDay,
+      };
+    });
+
+    return {
+      schedule,
+      appointmentDuration:
+        parsed.appointmentDuration || "30",
+      maxAppointments: parsed.maxAppointments || "10",
+      consultationFee: parsed.consultationFee || "3000",
+    };
+  } catch (error) {
+    console.error("Unable to load doctor availability:", error);
+    return getDefaultAvailability();
+  }
+}
+
 function getLocalDateKey(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -171,13 +362,9 @@ function getDayLabel(date: Date): string {
   const currentDate = new Date(date);
   currentDate.setHours(0, 0, 0, 0);
 
-  if (currentDate.getTime() === today.getTime()) {
-    return "Today";
-  }
+  if (currentDate.getTime() === today.getTime()) return "Today";
 
-  if (currentDate.getTime() === tomorrow.getTime()) {
-    return "Tomorrow";
-  }
+  if (currentDate.getTime() === tomorrow.getTime()) return "Tomorrow";
 
   return date.toLocaleDateString("en-US", {
     weekday: "short",
@@ -228,7 +415,6 @@ function getAvailableDates(
       weekday,
     });
 
-    // Show a manageable number of available dates.
     if (availableDates.length >= 10) break;
   }
 
@@ -261,7 +447,6 @@ function getSlotsForDate(
   ) {
     const slotEnd = slotStart + duration;
 
-    // Do not show slots that overlap the doctor's break.
     const overlapsBreak =
       breakStart < breakEnd &&
       slotStart < breakEnd &&
@@ -269,7 +454,6 @@ function getSlotsForDate(
 
     if (overlapsBreak) continue;
 
-    // Do not show past appointment times for today.
     if (isToday && slotStart <= currentMinutes) continue;
 
     slots.push(minutesToTime(slotStart));
@@ -281,59 +465,68 @@ function getSlotsForDate(
 function BookAppointment() {
   const navigate = useNavigate();
 
-  const [selectedDoctor, setSelectedDoctor] = useState<Doctor>(doctors[0]);
+  const [doctors, setDoctors] = useState<Doctor[]>(getDoctors);
+
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor>(
+    () => getDoctors().find((doctor) => doctor.id === 1) ?? defaultDoctors[0],
+  );
+
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [reason, setReason] = useState("");
 
   const [availabilitySettings, setAvailabilitySettings] =
-    useState<AvailabilitySettings | null>(null);
+    useState<AvailabilitySettings>(getAvailability);
 
-  // Read the doctor's saved availability settings.
+  // Load admin changes and keep doctor information synchronized.
   useEffect(() => {
-    const loadAvailability = () => {
-      const savedSettings = localStorage.getItem(
-        "doctorAvailabilitySettings",
-      );
+    const loadDoctors = () => {
+      const latestDoctors = getDoctors();
 
-      if (!savedSettings) {
-        setAvailabilitySettings(null);
-        return;
-      }
+      setDoctors(latestDoctors);
 
-      try {
-        const parsedSettings = JSON.parse(
-          savedSettings,
-        ) as AvailabilitySettings;
+      setSelectedDoctor((currentDoctor) => {
+        const updatedDoctor = latestDoctors.find(
+          (doctor) => doctor.id === currentDoctor.id,
+        );
 
-        if (Array.isArray(parsedSettings.schedule)) {
-          setAvailabilitySettings(parsedSettings);
-        } else {
-          setAvailabilitySettings(null);
+        if (updatedDoctor?.status === "Active") {
+          return updatedDoctor;
         }
-      } catch {
-        console.error("Unable to load doctor availability.");
-        setAvailabilitySettings(null);
-      }
+
+        return (
+          latestDoctors.find((doctor) => doctor.status === "Active") ??
+          defaultDoctors[0]
+        );
+      });
     };
 
-    loadAvailability();
+    const loadAvailability = () => {
+      setAvailabilitySettings(getAvailability());
+    };
 
-    // Listen for updates made in another browser tab.
-    window.addEventListener("storage", loadAvailability);
+    const loadAllData = () => {
+      loadDoctors();
+      loadAvailability();
+    };
 
-    // Listen for updates made in the same tab.
-    window.addEventListener("availabilityUpdated", loadAvailability);
+    loadAllData();
+
+    window.addEventListener("storage", loadAllData);
+    window.addEventListener("doctorsUpdated", loadAllData);
+    window.addEventListener("availabilityUpdated", loadAllData);
 
     return () => {
-      window.removeEventListener("storage", loadAvailability);
-      window.removeEventListener("availabilityUpdated", loadAvailability);
+      window.removeEventListener("storage", loadAllData);
+      window.removeEventListener("doctorsUpdated", loadAllData);
+      window.removeEventListener("availabilityUpdated", loadAllData);
     };
   }, []);
 
-  // Only Dr. Munib uses the saved settings for now.
+  // Dr. Munib uses the saved availability settings.
+  // Dr. Nazli uses the default schedule until her own settings are added.
   const currentSchedule = useMemo(() => {
-    if (selectedDoctor.id === 1 && availabilitySettings?.schedule) {
+    if (selectedDoctor.id === 1 && availabilitySettings.schedule) {
       return availabilitySettings.schedule;
     }
 
@@ -341,7 +534,7 @@ function BookAppointment() {
   }, [selectedDoctor.id, availabilitySettings]);
 
   const appointmentDuration = useMemo(() => {
-    if (selectedDoctor.id === 1 && availabilitySettings) {
+    if (selectedDoctor.id === 1) {
       const duration = Number(availabilitySettings.appointmentDuration);
 
       if (Number.isFinite(duration) && duration > 0) {
@@ -396,14 +589,16 @@ function BookAppointment() {
   }, [timeSlots, selectedTime]);
 
   const consultationFee =
-    selectedDoctor.id === 1 && availabilitySettings
-      ? `PKR ${Number(
-          availabilitySettings.consultationFee || 0,
-        ).toLocaleString("en-PK")}`
+    selectedDoctor.id === 1
+      ? normalizeFee(
+          availabilitySettings.consultationFee,
+          "PKR",
+          selectedDoctor.feePKR,
+        )
       : selectedDoctor.feePKR;
 
   const canContinue = Boolean(
-    selectedDoctor &&
+    selectedDoctor.status === "Active" &&
       activeDate &&
       selectedTime &&
       timeSlots.includes(selectedTime) &&
@@ -411,6 +606,8 @@ function BookAppointment() {
   );
 
   const handleDoctorSelect = (doctor: Doctor) => {
+    if (doctor.status !== "Active") return;
+
     setSelectedDoctor(doctor);
     setSelectedDate("");
     setSelectedTime("");
@@ -493,78 +690,95 @@ function BookAppointment() {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {doctors.map((doctor) => {
-                    const isSelected = selectedDoctor.id === doctor.id;
+                  {doctors
+                    .filter((doctor) => doctor.status === "Active")
+                    .map((doctor) => {
+                      const isSelected = selectedDoctor.id === doctor.id;
 
-                    const doctorFee =
-                      doctor.id === 1 && availabilitySettings
-                        ? `PKR ${Number(
-                            availabilitySettings.consultationFee || 0,
-                          ).toLocaleString("en-PK")}`
-                        : doctor.feePKR;
+                      const doctorFee =
+                        doctor.id === 1
+                          ? normalizeFee(
+                              availabilitySettings.consultationFee,
+                              "PKR",
+                              doctor.feePKR,
+                            )
+                          : doctor.feePKR;
 
-                    return (
-                      <button
-                        key={doctor.id}
-                        type="button"
-                        onClick={() => handleDoctorSelect(doctor)}
-                        className={`relative rounded-2xl border p-4 text-left transition-all ${
-                          isSelected
-                            ? "border-[#183b3b] bg-[#f1f8f7] shadow-md"
-                            : "border-slate-200 hover:border-[#8bb5b0] hover:shadow-sm"
-                        }`}
-                      >
-                        {isSelected && (
-                          <div className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-[#0B63CE] text-white">
-                            <Check size={14} />
+                      return (
+                        <button
+                          key={doctor.id}
+                          type="button"
+                          onClick={() => handleDoctorSelect(doctor)}
+                          className={`relative rounded-2xl border p-4 text-left transition-all ${
+                            isSelected
+                              ? "border-[#183b3b] bg-[#f1f8f7] shadow-md"
+                              : "border-slate-200 hover:border-[#8bb5b0] hover:shadow-sm"
+                          }`}
+                        >
+                          {isSelected && (
+                            <div className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-[#0B63CE] text-white">
+                              <Check size={14} />
+                            </div>
+                          )}
+
+                          <div className="flex gap-4">
+                            <img
+  src={doctor.image || (doctor.id === 2 ? ladyDoc : drMunib)}
+  alt={doctor.name}
+  onError={(e) => {
+    const fallbackImage = doctor.id === 2 ? ladyDoc : drMunib;
+
+    if (e.currentTarget.src !== new URL(fallbackImage, window.location.href).href) {
+      e.currentTarget.src = fallbackImage;
+    }
+  }}
+  className="h-20 w-20 rounded-2xl object-cover object-top"
+/>
+
+                            <div className="min-w-0">
+                              <h3 className="font-bold text-[#183b3b]">
+                                {doctor.name}
+                              </h3>
+
+                              <p className="mt-1 text-sm text-[#536276]">
+                                {doctor.specialty}
+                              </p>
+
+                              <p className="mt-1 text-xs text-slate-500">
+                                {doctor.qualifications}
+                              </p>
+
+                              <p className="mt-2 text-xs text-slate-500">
+                                {doctor.languages}
+                              </p>
+                            </div>
                           </div>
-                        )}
 
-                        <div className="flex gap-4">
-                          <img
-                            src={doctor.image}
-                            alt={doctor.name}
-                            className="h-20 w-20 rounded-2xl object-cover object-top"
-                          />
+                          <div className="mt-4 border-t border-slate-200 pt-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-slate-500">
+                                Consultation fee
+                              </span>
 
-                          <div className="min-w-0">
-                            <h3 className="font-bold text-[#183b3b]">
-                              {doctor.name}
-                            </h3>
+                              <span className="text-sm font-bold text-[#183b3b]">
+                                {doctorFee}
+                              </span>
+                            </div>
 
-                            <p className="mt-1 text-sm text-[#536276]">
-                              {doctor.specialty}
-                            </p>
-
-                            <p className="mt-1 text-xs text-slate-500">
-                              {doctor.qualifications}
-                            </p>
-
-                            <p className="mt-2 text-xs text-slate-500">
-                              {doctor.languages}
+                            <p className="mt-1 text-right text-xs text-slate-400">
+                              International: {doctor.feeUSD}
                             </p>
                           </div>
-                        </div>
-
-                        <div className="mt-4 border-t border-slate-200 pt-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-slate-500">
-                              Consultation fee
-                            </span>
-
-                            <span className="text-sm font-bold text-[#183b3b]">
-                              {doctorFee}
-                            </span>
-                          </div>
-
-                          <p className="mt-1 text-right text-xs text-slate-400">
-                            International: {doctor.feeUSD}
-                          </p>
-                        </div>
-                      </button>
-                    );
-                  })}
+                        </button>
+                      );
+                    })}
                 </div>
+
+                {doctors.every((doctor) => doctor.status !== "Active") && (
+                  <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
+                    No doctors are currently available for booking.
+                  </p>
+                )}
               </section>
 
               {/* Select Date */}
@@ -715,10 +929,18 @@ function BookAppointment() {
                   {/* Doctor */}
                   <div className="flex items-center gap-3">
                     <img
-                      src={selectedDoctor.image}
-                      alt={selectedDoctor.name}
-                      className="h-14 w-14 rounded-xl object-cover object-top"
-                    />
+  src={selectedDoctor.image || (selectedDoctor.id === 2 ? ladyDoc : drMunib)}
+  alt={selectedDoctor.name}
+  onError={(e) => {
+    const fallbackImage =
+      selectedDoctor.id === 2 ? ladyDoc : drMunib;
+
+    if (e.currentTarget.src !== new URL(fallbackImage, window.location.href).href) {
+      e.currentTarget.src = fallbackImage;
+    }
+  }}
+  className="h-14 w-14 rounded-xl object-cover object-top"
+/>
 
                     <div>
                       <p className="text-sm font-bold text-[#183b3b]">
@@ -745,7 +967,9 @@ function BookAppointment() {
 
                         <p className="mt-0.5 text-sm font-semibold text-[#183b3b]">
                           {activeDate
-                            ? formatFullDate(new Date(`${activeDate.isoDate}T12:00:00`))
+                            ? formatFullDate(
+                                new Date(`${activeDate.isoDate}T12:00:00`),
+                              )
                             : "No date available"}
                         </p>
                       </div>
@@ -800,9 +1024,6 @@ function BookAppointment() {
                       navigate("/review-appointment", {
                         state: {
                           selectedDoctor,
-
-                          // Keep the original day-number property for
-                          // compatibility with the existing review page.
                           selectedDate: activeDate?.date ?? "",
                           selectedDateISO: selectedDate,
                           selectedDateLabel: activeDate
@@ -810,7 +1031,6 @@ function BookAppointment() {
                                 new Date(`${activeDate.isoDate}T12:00:00`),
                               )
                             : "",
-
                           selectedTime,
                           reason,
                           consultationFee,

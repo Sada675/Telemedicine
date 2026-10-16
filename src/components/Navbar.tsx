@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import drMunibImage from "../assets/dr-munib121.jpg";
 
 import {
   Menu,
@@ -16,6 +17,16 @@ import {
 
 const PATIENT_PROFILE_KEY = "telemedicinePatientProfile";
 const DOCTOR_PROFILE_KEY = "telemedicineDoctorProfile";
+
+const ADMIN_DOCTORS_KEY = "telemedicineAdminDoctors";
+
+type AdminDoctor = {
+  id?: string | number;
+  name?: string;
+  image?: string;
+  specialty?: string;
+  status?: string;
+};
 
 type SavedProfile = {
   fullName?: string;
@@ -36,7 +47,13 @@ function Navbar() {
     () => localStorage.getItem("userName") || "Sadaye Noor"
   );
 
-  const [profilePicture, setProfilePicture] = useState("");
+  const [profilePicture, setProfilePicture] = useState(() => {
+  const role = (
+    localStorage.getItem("userRole") || "patient"
+  ).toLowerCase();
+
+  return role === "doctor" ? drMunibImage : "";
+});
 
   const desktopProfileRef = useRef<HTMLDivElement>(null);
   const mobileProfileRef = useRef<HTMLDivElement>(null);
@@ -66,64 +83,101 @@ function Navbar() {
   // Synchronize authentication and profile
   // ----------------------------------
   const syncAuthState = useCallback(() => {
-    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+const loggedIn = localStorage.getItem("isLoggedIn") === "true";
 
-    const role = (
-      localStorage.getItem("userRole") || "patient"
-    ).toLowerCase();
+const role = (
+  localStorage.getItem("userRole") || "patient"
+).toLowerCase();
 
-    setIsLoggedIn(loggedIn);
+setIsLoggedIn(loggedIn);
 
-    const profileKey =
-      role === "doctor"
-        ? DOCTOR_PROFILE_KEY
-        : PATIENT_PROFILE_KEY;
+const profileKey =
+  role === "doctor"
+    ? DOCTOR_PROFILE_KEY
+    : PATIENT_PROFILE_KEY;
 
-    const defaultName =
-      role === "doctor"
-        ? "Doctor"
-        : role === "admin"
-          ? "Admin"
-          : "Sadaye Noor";
+const defaultName =
+  role === "doctor"
+    ? "Dr. Munib"
+    : role === "admin"
+      ? "Admin"
+      : "Sadaye Noor";
 
-    try {
-      const savedProfile = localStorage.getItem(profileKey);
+// Default profile values
+let updatedName =
+  localStorage.getItem("userName") || defaultName;
 
-      if (savedProfile) {
-        const parsedProfile: SavedProfile = JSON.parse(savedProfile);
+let updatedPicture =
+  role === "doctor" ? drMunibImage : "";
 
-        const savedName =
-          parsedProfile.fullName?.trim() ||
-          localStorage.getItem("userName") ||
-          defaultName;
+// Read admin-managed doctor data
+if (role === "doctor") {
+  try {
+    const storedDoctors = localStorage.getItem(ADMIN_DOCTORS_KEY);
 
-        setUserName(savedName);
-        setProfilePicture(parsedProfile.profilePicture || "");
+    if (storedDoctors) {
+      const doctors: AdminDoctor[] = JSON.parse(storedDoctors);
 
-        if (localStorage.getItem("userName") !== savedName) {
-          localStorage.setItem("userName", savedName);
+      if (Array.isArray(doctors)) {
+        const managedDoctor = doctors.find((doctor) => {
+          const doctorName = doctor.name?.toLowerCase() || "";
+          const doctorId = String(doctor.id || "").toLowerCase();
+
+          return (
+            doctorId === "munib" ||
+            doctorName.includes("munib")
+          );
+        });
+
+        if (managedDoctor) {
+          updatedName =
+            managedDoctor.name?.trim() || defaultName;
+
+          updatedPicture =
+            managedDoctor.image?.trim() || drMunibImage;
         }
-      } else {
-        setUserName(
-          localStorage.getItem("userName") || defaultName
-        );
-
-        setProfilePicture("");
       }
-    } catch (error) {
-      console.error("Unable to synchronize profile:", error);
-
-      setUserName(
-        localStorage.getItem("userName") || defaultName
-      );
-
-      setProfilePicture("");
     }
+  } catch (error) {
+    console.error("Unable to load admin-managed doctor:", error);
+  }
+}
 
-    if (!loggedIn) {
-      setProfileOpen(false);
+// Read the user's saved profile
+try {
+  const savedProfile = localStorage.getItem(profileKey);
+
+  if (savedProfile) {
+    const parsedProfile: SavedProfile = JSON.parse(savedProfile);
+
+    // For patients, continue using their personal profile.
+    // For doctors, admin-managed details take priority.
+    if (role !== "doctor") {
+      updatedName =
+        parsedProfile.fullName?.trim() ||
+        updatedName;
+
+      updatedPicture =
+        parsedProfile.profilePicture?.trim() || "";
     }
-  }, []);
+  }
+} catch (error) {
+  console.error("Unable to synchronize profile:", error);
+}
+
+setUserName(updatedName);
+setProfilePicture(updatedPicture);
+
+if (localStorage.getItem("userName") !== updatedName) {
+  localStorage.setItem("userName", updatedName);
+}
+
+if (!loggedIn) {
+  setProfileOpen(false);
+}
+
+}, []);
+
 
   // ----------------------------------
   // Listen for login and profile changes
@@ -498,10 +552,14 @@ function Navbar() {
         <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e5f4f2] text-[#0B63CE]">
           {profilePicture ? (
             <img
-              src={profilePicture}
-              alt={userName}
-              className="h-full w-full rounded-full object-cover"
-            />
+  src={profilePicture || drMunibImage}
+  alt={userName}
+  onError={(event) => {
+    event.currentTarget.onerror = null;
+    event.currentTarget.src = drMunibImage;
+  }}
+  className="h-full w-full rounded-full object-cover"
+/>
           ) : (
             <UserRound size={21} />
           )}
@@ -563,6 +621,14 @@ function Navbar() {
         className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-blue-50 hover:text-[#0B63CE]"
       >
         Doctor
+      </Link>
+
+      <Link
+        to="/admin-login"
+        onClick={closeMenus}
+        className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-blue-50 hover:text-[#0B63CE]"
+      >
+        Admin
       </Link>
     </div>
   );
@@ -933,6 +999,14 @@ function Navbar() {
                         className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-blue-50 hover:text-[#0B63CE]"
                       >
                         Doctor
+                      </Link>
+
+                      <Link
+                        to="/admin-login"
+                        onClick={closeMenus}
+                        className="block rounded-lg px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-blue-50 hover:text-[#0B63CE]"
+                      >
+                        Admin
                       </Link>
                     </div>
                   )}

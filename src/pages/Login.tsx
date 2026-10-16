@@ -231,19 +231,6 @@ navigate("/patient-dashboard");
                   Create Patient Account
                 </Link>
               </p>
-
-              {/* Security Note */}
-              <div className="mt-8 flex items-start gap-3 rounded-xl bg-[#f3f8f7] p-4">
-                <ShieldCheck
-                  size={20}
-                  className="mt-0.5 shrink-0 text-[#245b5b]"
-                />
-
-                <p className="text-xs leading-5 text-slate-500">
-                  This is a demo login for development and testing. Real
-                  authentication will be connected to the backend later.
-                </p>
-              </div>
             </div>
           </div>
         </div>

@@ -21,10 +21,13 @@ import DoctorAppointments from "./pages/DoctorAppointments";
 import DoctorPrescriptions from "./pages/DoctorPrescriptions";
 import DoctorAvailability from "./pages/DoctorAvailability";
 import OnlineConsultation from "./pages/OnlineConsultation";
+import AdminLogin from "./pages/AdminLogin";
+import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/AdminDashboard";
 import ManageDoctors from "./pages/ManageDoctors";
 import ManagePatients from "./pages/ManagePatients";
 import ManageAppointments from "./pages/ManageAppointments";
+
 
 function App() {
   return (
@@ -51,10 +54,14 @@ function App() {
       <Route path="/doctor-prescriptions" element={<DoctorPrescriptions />}/>
       <Route path="/doctor-availability" element={<DoctorAvailability />}/>
       <Route path="/online-consultation" element={<OnlineConsultation />}/>
+      <Route path="/admin-login" element={<AdminLogin />} />
+      <Route element={<AdminLayout />}>
       <Route path="/admin-dashboard" element={<AdminDashboard />} />
       <Route path="/manage-doctors" element={<ManageDoctors />} />
       <Route path="/manage-patients" element={<ManagePatients />} />
       <Route path="/manage-appointments" element={<ManageAppointments />}/>
+      </Route>
+      
 
     </Routes>
   );
