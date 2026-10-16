@@ -16,6 +16,8 @@ import {
   CircleDollarSign,
   Clock,
   CalendarDays,
+  ChevronRight,
+  Home,
 } from "lucide-react";
 import drMunibImage from "../assets/dr-munib121.jpg";
 import drNazliImage from "../assets/lady-doc.jpg";
@@ -367,35 +369,48 @@ function ManageDoctors() {
   ];
 
   return (
-    <div className="min-h-screen w-full min-w-0 bg-[#f5f8fc] px-4 py-6 text-slate-800 sm:px-6 lg:px-10">
-      <div className="mx-auto w-full max-w-[1400px] space-y-6">
+    <div className="min-h-screen w-full min-w-0 bg-[#f5f8fc] text-slate-800">
+  <div className="mx-auto w-full max-w-[1600px] space-y-7 p-4 sm:p-7 lg:p-9">
 
-        {/* Page Heading */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <span>Admin</span>
-              <span>/</span>
-              <span className="font-medium text-[#0B63CE]">
-                Manage Doctors
-              </span>
-            </div>
 
-            <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-              Manage Doctors
-            </h1>
+    {/* Page Heading */}
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        {/* Breadcrumb */}
+        <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
+          <span className="flex items-center gap-1.5 text-slate-500">
+            <Home size={15} />
+            Dashboard
+          </span>
 
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              Manage doctor profiles, qualifications, consultation fees,
-              languages, and availability.
-            </p>
-          </div>
+          <ChevronRight size={15} className="text-slate-400" />
 
-          <div className="flex w-fit items-center gap-2 rounded-xl border border-blue-100 bg-white px-4 py-3 text-sm font-semibold text-[#0B63CE] shadow-sm">
-            <Stethoscope size={18} />
-            <span>2 Registered Doctors</span>
-          </div>
+          <span className="font-semibold text-[#0B63CE]">
+            Manage Doctors
+          </span>
         </div>
+
+        {/* Page Title */}
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
+          Manage Doctors
+        </h1>
+
+        {/* Page Description */}
+        <p className="mt-2 text-sm leading-6 text-slate-500">
+          Manage doctor profiles, qualifications, consultation fees,
+          languages, and availability.
+        </p>
+      </div>
+
+      {/* Registered Doctors */}
+      <div className="flex w-fit items-center gap-2 rounded-xl border border-blue-100 bg-white px-4 py-3 text-sm font-semibold text-[#0B63CE] shadow-sm">
+        <Stethoscope size={18} />
+        <span>{doctors.length} Registered Doctors</span>
+      </div>
+    </div>
+
+    {/* Success Message */}
+
 
         {/* Success Message */}
         {notice && (
