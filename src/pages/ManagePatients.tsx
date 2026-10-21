@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
+
 import {
   Search,
   Users,
@@ -7,7 +8,6 @@ import {
   Phone,
   MapPin,
   Eye,
-  ShieldCheck,
   CheckCircle2,
   UserCheck,
   UserX,
@@ -15,6 +15,8 @@ import {
   UserPlus,
   Activity,
   ChevronRight,
+  ChevronLeft,
+  ChevronDown,
   CalendarDays,
   SlidersHorizontal,
   X,
@@ -123,13 +125,30 @@ function readPatients(): Patient[] {
 
 function ManagePatients() {
   const [patients, setPatients] = useState<Patient[]>(readPatients);
+
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
+
+  const [statusFilter, setStatusFilter] = useState<
+    "All" | PatientStatus
+  >("All");
+
   const [selectedPatient, setSelectedPatient] =
     useState<Patient | null>(null);
+
   const [notice, setNotice] = useState("");
 
-  // Save patient data in this browser.
+  // Pagination states
+  const [rowsPerPage, setRowsPerPage] = useState(3);
+  const [rowsPerPageInput, setRowsPerPageInput] = useState("3");
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
+  const [pageInput, setPageInput] = useState("1");
+
+  const pageDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Save patient data in localStorage.
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(patients));
   }, [patients]);
@@ -145,7 +164,7 @@ function ManagePatients() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
-  // Close the modal using the Escape key.
+  // Close the patient modal using Escape.
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -158,12 +177,39 @@ function ManagePatients() {
     return () => window.removeEventListener("keydown", handleEscape);
   }, []);
 
+  // Close pagination dropdown on outside click or Escape.
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        pageDropdownRef.current &&
+        !pageDropdownRef.current.contains(event.target as Node)
+      ) {
+        setPageDropdownOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setPageDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
+
   const activeCount = patients.filter(
     (patient) => patient.status === "Active",
   ).length;
 
   const inactiveCount = patients.length - activeCount;
 
+  // Search and status filtering.
   const filteredPatients = useMemo(() => {
     const query = search.trim().toLowerCase();
 
@@ -186,6 +232,185 @@ function ManagePatients() {
       return matchesSearch && matchesStatus;
     });
   }, [patients, search, statusFilter]);
+
+  // Pagination calculations.
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredPatients.length / rowsPerPage),
+  );
+
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const startIndex =
+    filteredPatients.length === 0
+      ? 0
+      : (safeCurrentPage - 1) * rowsPerPage;
+
+  const endIndex = Math.min(
+    startIndex + rowsPerPage,
+    filteredPatients.length,
+  );
+
+  // Only display patients belonging to the current page.
+  const paginatedPatients = filteredPatients.slice(startIndex, endIndex);
+
+  // Generate numbered pagination buttons.
+  const pageNumbers: (number | "ellipsis")[] = [];
+
+  if (totalPages <= 5) {
+    for (let page = 1; page <= totalPages; page += 1) {
+      pageNumbers.push(page);
+    }
+  } else {
+    pageNumbers.push(1);
+
+    if (safeCurrentPage > 3) {
+      pageNumbers.push("ellipsis");
+    }
+
+    const firstMiddlePage = Math.max(2, safeCurrentPage - 1);
+
+    const lastMiddlePage = Math.min(
+      totalPages - 1,
+      safeCurrentPage + 1,
+    );
+
+    for (
+      let page = firstMiddlePage;
+      page <= lastMiddlePage;
+      page += 1
+    ) {
+      pageNumbers.push(page);
+    }
+
+    if (safeCurrentPage < totalPages - 2) {
+      pageNumbers.push("ellipsis");
+    }
+
+    pageNumbers.push(totalPages);
+  }
+
+  // Navigate to a particular page.
+  const goToPage = (page: number) => {
+    const validPage = Math.max(1, Math.min(page, totalPages));
+
+    setCurrentPage(validPage);
+    setPageInput(String(validPage));
+    setPageDropdownOpen(false);
+  };
+
+  // Handle manual page number input.
+  const handlePageInput = (value: string) => {
+    setPageInput(value);
+
+    if (value.trim() === "") return;
+
+    const page = Number(value);
+
+    if (
+      Number.isInteger(page) &&
+      page >= 1 &&
+      page <= totalPages
+    ) {
+      setCurrentPage(page);
+    }
+  };
+
+  // Validate manual page input.
+  const validatePageInput = () => {
+    const page = Number(pageInput);
+
+    if (
+      pageInput.trim() === "" ||
+      !Number.isInteger(page) ||
+      page < 1 ||
+      page > totalPages
+    ) {
+      setPageInput(String(safeCurrentPage));
+      return;
+    }
+
+    goToPage(page);
+  };
+
+  // Change rows per page using dropdown or input.
+  const changeRowsPerPage = (value: number) => {
+    if (
+      !Number.isInteger(value) ||
+      value < 1 ||
+      value > 10000
+    ) {
+      return;
+    }
+
+    setRowsPerPage(value);
+    setRowsPerPageInput(String(value));
+
+    setCurrentPage(1);
+    setPageInput("1");
+    setPageDropdownOpen(false);
+  };
+
+  // Handle typing in custom rows input.
+  const handleRowsPerPageInput = (value: string) => {
+    setRowsPerPageInput(value);
+
+    if (value.trim() === "") return;
+
+    const number = Number(value);
+
+    if (
+      Number.isInteger(number) &&
+      number >= 1 &&
+      number <= 10000
+    ) {
+      setRowsPerPage(number);
+      setCurrentPage(1);
+      setPageInput("1");
+      setPageDropdownOpen(false);
+    }
+  };
+
+  // Validate custom rows input on blur.
+  const validateRowsPerPageInput = () => {
+    const number = Number(rowsPerPageInput);
+
+    if (
+      rowsPerPageInput.trim() === "" ||
+      !Number.isInteger(number) ||
+      number < 1 ||
+      number > 10000
+    ) {
+      setRowsPerPageInput(String(rowsPerPage));
+      return;
+    }
+
+    changeRowsPerPage(number);
+  };
+
+  const changeSearch = (value: string) => {
+    setSearch(value);
+    setCurrentPage(1);
+    setPageInput("1");
+    setPageDropdownOpen(false);
+  };
+
+  const changeStatusFilter = (
+    value: "All" | PatientStatus,
+  ) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+    setPageInput("1");
+    setPageDropdownOpen(false);
+  };
+
+  const clearFilters = () => {
+    setSearch("");
+    setStatusFilter("All");
+    setCurrentPage(1);
+    setPageInput("1");
+    setPageDropdownOpen(false);
+  };
 
   const getInitials = (name: string) =>
     name
@@ -228,9 +453,8 @@ function ManagePatients() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f8fc] text-slate-800">
-      <div className="mx-auto max-w-[1600px] space-y-7 p-4 sm:p-7 lg:p-9">
-
+    <div className="min-h-screen w-full bg-[#f5f8fc] text-slate-800">
+      <div className="mx-auto w-full max-w-[1400px] space-y-7 px-6 py-6 sm:px-10 lg:px-14 xl:px-16">
         {/* Breadcrumb */}
         <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-400">
           <span>Dashboard</span>
@@ -267,6 +491,7 @@ function ManagePatients() {
               <p className="text-xs font-medium text-slate-400">
                 Patient accounts
               </p>
+
               <p className="mt-1 text-sm font-extrabold text-[#183b3b]">
                 {patients.length} registered
               </p>
@@ -335,8 +560,7 @@ function ManagePatients() {
         </section>
 
         {/* Patient directory */}
-        <section className="overflow-hidden rounded-[22px] border border-slate-200/70 bg-white shadow-[0_4px_24px_rgba(15,23,42,0.035)]">
-
+        <section className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
           {/* Directory heading */}
           <div className="flex flex-col justify-between gap-4 border-b border-slate-100 p-5 sm:p-6 lg:flex-row lg:items-center">
             <div className="flex items-start gap-3">
@@ -348,6 +572,7 @@ function ManagePatients() {
                 <h3 className="text-base font-extrabold text-[#183b3b]">
                   Patient Directory
                 </h3>
+
                 <p className="mt-1 text-xs leading-5 text-slate-400">
                   Search, review, and manage patient accounts.
                 </p>
@@ -361,7 +586,7 @@ function ManagePatients() {
           </div>
 
           {/* Search and filters */}
-          <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/50 p-4 sm:p-5 md:flex-row">
+          <div className="flex flex-col gap-3 border-b border-slate-100 bg-[#fcfdff] p-4 sm:p-5 md:flex-row">
             <div className="relative min-w-0 flex-1">
               <Search
                 size={18}
@@ -371,10 +596,10 @@ function ManagePatients() {
               <input
                 type="search"
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => changeSearch(event.target.value)}
                 placeholder="Search by name, email, phone or patient ID..."
                 aria-label="Search patients"
-                className="w-full rounded-xl border border-slate-200 bg-white py-3.5 pl-11 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#0B63CE] focus:ring-4 focus:ring-blue-50"
+                className="w-full rounded-xl border border-slate-200 bg-[#fafcff] py-3 pl-10 pr-4 text-xs outline-none transition placeholder:text-slate-400 focus:border-[#0B63CE] focus:bg-white focus:ring-4 focus:ring-blue-50 sm:text-sm"
               />
             </div>
 
@@ -386,9 +611,13 @@ function ManagePatients() {
 
               <select
                 value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value)}
+                onChange={(event) =>
+                  changeStatusFilter(
+                    event.target.value as "All" | PatientStatus,
+                  )
+                }
                 aria-label="Filter by patient status"
-                className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-3.5 pl-10 pr-9 text-sm font-medium text-slate-600 outline-none transition focus:border-[#0B63CE] focus:ring-4 focus:ring-blue-50"
+                className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-9 text-xs font-semibold text-slate-600 outline-none transition focus:border-[#0B63CE] focus:ring-4 focus:ring-blue-50 sm:text-sm"
               >
                 <option value="All">All statuses</option>
                 <option value="Active">Active patients</option>
@@ -401,7 +630,7 @@ function ManagePatients() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[850px] text-left">
               <thead>
-                <tr className="bg-slate-50/70 text-[10px] font-bold uppercase tracking-[0.13em] text-slate-400">
+                <tr className="bg-[#f8fafc] text-[10px] font-bold uppercase tracking-[0.13em] text-slate-400">
                   <th className="px-6 py-4">Patient</th>
                   <th className="px-6 py-4">Contact information</th>
                   <th className="px-6 py-4">Location</th>
@@ -412,10 +641,10 @@ function ManagePatients() {
               </thead>
 
               <tbody className="divide-y divide-slate-100">
-                {filteredPatients.map((patient) => (
+                {paginatedPatients.map((patient) => (
                   <tr
                     key={patient.id}
-                    className="group transition-colors hover:bg-blue-50/30"
+                    className="group transition-colors hover:bg-[#f8fbff]"
                   >
                     {/* Patient information */}
                     <td className="px-6 py-5">
@@ -428,6 +657,7 @@ function ManagePatients() {
                           <p className="text-[13px] font-bold text-[#183b3b] transition group-hover:text-[#0B63CE]">
                             {patient.name}
                           </p>
+
                           <p className="mt-1 text-[11px] font-medium text-slate-400">
                             {patient.id}
                           </p>
@@ -435,7 +665,7 @@ function ManagePatients() {
                       </div>
                     </td>
 
-                    {/* Contact */}
+                    {/* Contact information */}
                     <td className="px-6 py-5">
                       <div className="space-y-2">
                         <p className="flex items-center gap-2 text-xs font-medium text-slate-600">
@@ -478,6 +708,7 @@ function ManagePatients() {
                               : "bg-slate-400"
                           }`}
                         />
+
                         {patient.status}
                       </span>
                     </td>
@@ -544,10 +775,7 @@ function ManagePatients() {
                       {(search || statusFilter !== "All") && (
                         <button
                           type="button"
-                          onClick={() => {
-                            setSearch("");
-                            setStatusFilter("All");
-                          }}
+                          onClick={clearFilters}
                           className="mt-4 rounded-xl bg-blue-50 px-4 py-2 text-xs font-bold text-[#0B63CE] transition hover:bg-blue-100"
                         >
                           Clear filters
@@ -560,30 +788,259 @@ function ManagePatients() {
             </table>
           </div>
 
-          {/* Table footer */}
-          <div className="flex flex-col gap-2 border-t border-slate-100 bg-slate-50/40 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <p className="text-xs text-slate-400">
-              Showing{" "}
-              <span className="font-bold text-slate-600">
-                {filteredPatients.length}
-              </span>{" "}
-              of{" "}
-              <span className="font-bold text-slate-600">
-                {patients.length}
-              </span>{" "}
-              patient accounts
-            </p>
+          {/* Pagination footer */}
+          
+            {/* Pagination Footer */}
+<div className="flex flex-col gap-4 border-t border-slate-100 bg-[#fcfdff] px-5 py-4 sm:px-6">
+  <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+    {/* Rows per page and summary */}
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
+      <label
+        htmlFor="patients-rows-per-page"
+        className="whitespace-nowrap text-[11px] text-slate-500"
+      >
+        Rows per page:
+      </label>
 
-            <p className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
-              <ShieldCheck size={14} className="text-emerald-500" />
-              Patient information overview
-            </p>
+      <select
+        aria-label="Choose rows per page"
+        value={
+          [3, 5, 10, 20].includes(rowsPerPage)
+            ? String(rowsPerPage)
+            : "custom"
+        }
+        onChange={(event) => {
+          if (event.target.value !== "custom") {
+            changeRowsPerPage(Number(event.target.value));
+          }
+        }}
+        className="w-[85px] rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#0B63CE] focus:ring-4 focus:ring-blue-50"
+      >
+        <option value="3">3 rows</option>
+        <option value="5">5 rows</option>
+        <option value="10">10 rows</option>
+        <option value="20">20 rows</option>
+        <option value="custom">Custom</option>
+      </select>
+
+      <input
+        id="patients-rows-per-page"
+        type="number"
+        min={1}
+        max={10000}
+        step={1}
+        value={rowsPerPageInput}
+        onChange={(event) =>
+          handleRowsPerPageInput(event.target.value)
+        }
+        onBlur={validateRowsPerPageInput}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.currentTarget.blur();
+          }
+        }}
+        aria-label="Enter custom rows per page"
+        className="w-[76px] rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#0B63CE] focus:ring-4 focus:ring-blue-50"
+      />
+
+      <p className="text-[11px] text-slate-500" aria-live="polite">
+        Showing{" "}
+        <span className="font-bold text-slate-700">
+          {startIndex + (filteredPatients.length > 0 ? 1 : 0)}–{endIndex}
+        </span>{" "}
+        of{" "}
+        <span className="font-bold text-slate-700">
+          {filteredPatients.length}
+        </span>{" "}
+        patients
+      </p>
+    </div>
+
+    {/* Page Selection: dropdown opens upward */}
+    <div
+      ref={pageDropdownRef}
+      className="relative flex items-center gap-2"
+    >
+      <label
+        htmlFor="patients-page-input"
+        className="whitespace-nowrap text-[11px] font-medium text-slate-500"
+      >
+        Go to page:
+      </label>
+
+      <div className="relative w-[112px]">
+        <input
+          id="patients-page-input"
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          value={pageInput}
+          onFocus={() => setPageDropdownOpen(true)}
+          onClick={() => setPageDropdownOpen(true)}
+          onChange={(event) =>
+            handlePageInput(event.target.value)
+          }
+          onBlur={() => {
+            window.setTimeout(() => {
+              if (
+                !pageDropdownRef.current?.contains(
+                  document.activeElement,
+                )
+              ) {
+                validatePageInput();
+              }
+            }, 0);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              validatePageInput();
+              setPageDropdownOpen(false);
+              event.currentTarget.blur();
+            }
+
+            if (event.key === "Escape") {
+              setPageInput(String(safeCurrentPage));
+              setPageDropdownOpen(false);
+              event.currentTarget.blur();
+            }
+
+            if (event.key === "ArrowDown") {
+              event.preventDefault();
+              setPageDropdownOpen(true);
+            }
+          }}
+          aria-label="Enter page number"
+          aria-expanded={pageDropdownOpen}
+          aria-controls="patients-page-options"
+          aria-autocomplete="list"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 pr-8 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#0B63CE] focus:ring-4 focus:ring-blue-50"
+        />
+
+        <button
+          type="button"
+          aria-label="Toggle page selection"
+          aria-expanded={pageDropdownOpen}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() =>
+            setPageDropdownOpen((open) => !open)
+          }
+          className="absolute inset-y-0 right-0 flex w-8 items-center justify-center text-slate-400 transition hover:text-[#0B63CE]"
+        >
+          <ChevronDown
+            size={15}
+            className={`transition-transform ${
+              pageDropdownOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {pageDropdownOpen && (
+          <div
+            id="patients-page-options"
+            role="listbox"
+            aria-label="Available pages"
+            className="absolute bottom-full left-0 z-50 mb-2 max-h-48 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-300/40"
+          >
+            {Array.from(
+              { length: totalPages },
+              (_, index) => index + 1,
+            ).map((page) => (
+              <button
+                key={page}
+                type="button"
+                role="option"
+                aria-selected={safeCurrentPage === page}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => goToPage(page)}
+                className={`mb-0.5 flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-semibold transition last:mb-0 ${
+                  safeCurrentPage === page
+                    ? "bg-blue-50 text-[#0B63CE]"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-[#0B63CE]"
+                }`}
+              >
+                <span>Page {page}</span>
+
+                {safeCurrentPage === page && (
+                  <CheckCircle2
+                    size={14}
+                    className="text-[#0B63CE]"
+                  />
+                )}
+              </button>
+            ))}
           </div>
+        )}
+      </div>
+
+      <span className="whitespace-nowrap text-[10px] text-slate-400">
+        of {totalPages}
+      </span>
+    </div>
+
+    {/* Previous, page numbers and next */}
+    <div className="flex flex-wrap items-center gap-1.5 self-start sm:self-auto">
+      <button
+        type="button"
+        onClick={() => goToPage(safeCurrentPage - 1)}
+        disabled={safeCurrentPage <= 1}
+        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-[#0B63CE] hover:text-[#0B63CE] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:text-slate-600"
+        aria-label="Previous page"
+      >
+        <ChevronLeft size={15} />
+        <span className="hidden sm:inline">Previous</span>
+      </button>
+
+      {pageNumbers.map((page, index) =>
+        page === "ellipsis" ? (
+          <span
+            key={`ellipsis-${index}`}
+            className="px-1 text-xs text-slate-400"
+          >
+            …
+          </span>
+        ) : (
+          <button
+            key={page}
+            type="button"
+            onClick={() => goToPage(page)}
+            aria-label={`Go to page ${page}`}
+            aria-current={
+              safeCurrentPage === page ? "page" : undefined
+            }
+            className={`h-9 min-w-9 rounded-lg px-2.5 text-xs font-bold transition ${
+              safeCurrentPage === page
+                ? "bg-[#0B63CE] text-white shadow-sm"
+                : "border border-slate-200 bg-white text-slate-600 hover:border-[#0B63CE] hover:text-[#0B63CE]"
+            }`}
+          >
+            {page}
+          </button>
+        ),
+      )}
+
+      <button
+        type="button"
+        onClick={() => goToPage(safeCurrentPage + 1)}
+        disabled={safeCurrentPage >= totalPages}
+        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-[#0B63CE] hover:text-[#0B63CE] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:text-slate-600"
+        aria-label="Next page"
+      >
+        <span className="hidden sm:inline">Next</span>
+        <ChevronRight size={15} />
+      </button>
+    </div>
+  </div>
+
+  <p className="text-[10px] text-slate-400">
+    Patient information overview · Sample data
+  </p>
+</div>
         </section>
 
         {/* Footer */}
-        <footer className="flex flex-col gap-2 border-t border-slate-200/70 pt-5 pb-2 text-center text-[11px] text-slate-400 sm:flex-row sm:items-center sm:justify-between sm:text-left">
+        <footer className="flex flex-col items-center justify-between gap-2 border-t border-slate-200/70 pt-5 pb-2 text-center text-[11px] text-slate-400 sm:flex-row sm:text-left">
           <p>© 2026 Telemedicine. All rights reserved.</p>
+
           <p className="font-medium">
             Healthcare management made simpler.
           </p>
@@ -666,6 +1123,7 @@ function ManagePatients() {
                           : "bg-slate-400"
                       }`}
                     />
+
                     {selectedPatient.status} account
                   </span>
                 </div>
@@ -776,7 +1234,7 @@ function SummaryCard({
   trend,
 }: SummaryCardProps) {
   return (
-    <div className="group relative overflow-hidden rounded-[22px] border border-slate-200/70 bg-white p-5 shadow-[0_4px_24px_rgba(15,23,42,0.035)] transition-all duration-300 hover:-translate-y-1 hover:border-blue-100 hover:shadow-lg hover:shadow-blue-100/40 sm:p-6">
+    <div className="group relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-100 hover:shadow-lg hover:shadow-blue-100/40 sm:p-6">
       <div
         className={`absolute left-0 top-6 h-10 w-1 rounded-r-full ${accent}`}
       />
