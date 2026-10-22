@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 import {
   Search,
@@ -20,6 +21,7 @@ import {
   CalendarDays,
   SlidersHorizontal,
   X,
+  Home,
 } from "lucide-react";
 
 type PatientStatus = "Active" | "Inactive";
@@ -451,56 +453,63 @@ function ManagePatients() {
 
     setNotice("Patient status updated successfully.");
   };
+  
+return (
+  <div className="min-h-screen w-full bg-[#f5f8fc] text-slate-800">
+    <div className="mx-auto w-full max-w-[1200px] space-y-7 p-4 sm:p-7 lg:p-9">
 
-  return (
-    <div className="min-h-screen w-full bg-[#f5f8fc] text-slate-800">
-      <div className="mx-auto w-full max-w-[1400px] space-y-7 px-6 py-6 sm:px-10 lg:px-14 xl:px-16">
-        {/* Breadcrumb */}
-        <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-400">
-          <span>Dashboard</span>
-          <ChevronRight size={14} />
-          <span className="font-semibold text-[#0B63CE]">
+      {/* Page Heading */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          {/* Breadcrumb */}
+          <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
+            <Link
+              to="/admin-dashboard"
+              className="flex items-center gap-1.5 text-slate-500 transition hover:text-[#0B63CE]"
+            >
+              <Home size={15} />
+              Dashboard
+            </Link>
+
+            <ChevronRight size={15} className="text-slate-400" />
+
+            <span className="font-semibold text-[#0B63CE]">
+              Manage Patients
+            </span>
+          </div>
+
+          {/* Heading */}
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
             Manage Patients
-          </span>
+          </h1>
+
+          {/* Description */}
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            Manage patient profiles, contact information, and patient records.
+          </p>
         </div>
 
-        {/* Page heading */}
-        <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+        {/* Patient accounts */}
+        <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+            <Activity size={21} />
+          </div>
+
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-3 py-1.5 text-[11px] font-bold text-[#0B63CE] shadow-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#0B63CE]" />
-              PATIENT MANAGEMENT
-            </div>
+            <p className="text-xs font-medium text-slate-400">
+              Patient accounts
+            </p>
 
-            <h1 className="text-2xl font-extrabold tracking-tight text-[#183b3b] sm:text-3xl lg:text-[34px]">
-              Manage your patients.
-            </h1>
-
-            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
-              Review patient profiles, monitor account status, and manage
-              your healthcare community from one place.
+            <p className="mt-1 text-sm font-extrabold text-[#183b3b]">
+              {patients.length} registered
             </p>
           </div>
+        </div>
+      </div>
 
-          <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-              <Activity size={21} />
-            </div>
+      {/* Success notification */}
+      {notice && (
 
-            <div>
-              <p className="text-xs font-medium text-slate-400">
-                Patient accounts
-              </p>
-
-              <p className="mt-1 text-sm font-extrabold text-[#183b3b]">
-                {patients.length} registered
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Success notification */}
-        {notice && (
           <div
             role="status"
             className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-sm font-medium text-emerald-700"
@@ -799,7 +808,7 @@ function ManagePatients() {
         htmlFor="patients-rows-per-page"
         className="whitespace-nowrap text-[11px] text-slate-500"
       >
-        Rows per page:
+        Result per page:
       </label>
 
       <select
@@ -816,11 +825,10 @@ function ManagePatients() {
         }}
         className="w-[85px] rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#0B63CE] focus:ring-4 focus:ring-blue-50"
       >
-        <option value="3">3 rows</option>
-        <option value="5">5 rows</option>
-        <option value="10">10 rows</option>
-        <option value="20">20 rows</option>
-        <option value="custom">Custom</option>
+        <option value="3">3</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="20">20</option>
       </select>
 
       <input

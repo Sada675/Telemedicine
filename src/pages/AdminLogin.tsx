@@ -18,23 +18,57 @@ function AdminLogin() {
   const [password, setPassword] = useState("Admin123");
   const [error, setError] = useState("");
 
-  const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError("");
+  
+const handleLogin = (
+  event: React.FormEvent<HTMLFormElement>
+) => {
+  event.preventDefault();
+  setError("");
 
-    // Temporary demo credentials
+  try {
+    // Read credentials saved from Admin Settings
+    const storedCredentials = localStorage.getItem(
+      "telemedicineAdminCredentials"
+    );
+
+    // Default credentials for the first login
+    const credentials = storedCredentials
+      ? JSON.parse(storedCredentials)
+      : {
+          email: "admin@example.com",
+          password: "Admin123",
+        };
+
+    // Check email and password
     if (
-      email.trim().toLowerCase() === "admin@example.com" &&
-      password === "Admin123"
+      email.trim().toLowerCase() ===
+        credentials.email.trim().toLowerCase() &&
+      password === credentials.password
     ) {
+      // Save credentials if this is the first login
+      if (!storedCredentials) {
+        localStorage.setItem(
+          "telemedicineAdminCredentials",
+          JSON.stringify(credentials)
+        );
+      }
+
       localStorage.setItem("adminLoggedIn", "true");
       localStorage.setItem("adminName", "Admin");
 
       navigate("/admin-dashboard");
     } else {
-      setError("Invalid admin email or password. Please try again.");
+      setError(
+        "Invalid admin email or password. Please try again."
+      );
     }
-  };
+  } catch (error) {
+    console.error("Unable to verify admin credentials:", error);
+    setError("Unable to sign in. Please try again.");
+  }
+};
+
+
 
   return (
     <div className="min-h-screen bg-[#f8faf9] px-4 py-8 sm:px-6 lg:px-8">

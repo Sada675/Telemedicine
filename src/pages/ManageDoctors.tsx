@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import {
-  Search,
   Pencil,
   X,
   Upload,
@@ -19,12 +18,15 @@ import {
   ChevronRight,
   Home,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import drMunibImage from "../assets/dr-munib121.jpg";
 import drNazliImage from "../assets/lady-doc.jpg";
 
 type Doctor = {
   id: string;
   name: string;
+  email: string;
+  password: string;
   image: string;
   specialty: string;
   qualification: string;
@@ -42,7 +44,9 @@ const defaultDoctors: Doctor[] = [
   {
     id: "munib",
     name: "Dr. Munib",
-    image: "/dr-munib121.jpg",
+    email: "munib@example.com",
+    password: "",
+    image: drMunibImage,
     specialty: "Medical Specialist",
     qualification: "MBBS, FCPS",
     pmdcNumber: "XXXXX-M",
@@ -55,7 +59,9 @@ const defaultDoctors: Doctor[] = [
   {
     id: "nazli",
     name: "Dr. Nazli",
-    image: "/lady-doc.jpg",
+    email: "nazli@example.com",
+    password: "",
+    image: drNazliImage,
     specialty: "Medical Specialist",
     qualification: "MBBS, FCPS",
     pmdcNumber: "XXXXX-M",
@@ -78,113 +84,205 @@ const availableLanguages = [
 const inputClass =
   "w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#0B63CE] focus:ring-4 focus:ring-blue-50";
 
-function readDoctors(): Doctor[] {
-try {
-const saved = localStorage.getItem(STORAGE_KEY);
+function isDoctor(value: unknown): value is Doctor {
+  if (!value || typeof value !== "object") return false;
 
-if (!saved) {
-  return defaultDoctors;
-}
+  const item = value as Partial<Doctor>;
 
-const parsed: Doctor[] = JSON.parse(saved);
-
-if (!Array.isArray(parsed)) {
-  return defaultDoctors;
-}
-
-// Keep the two predefined doctors and use saved values when available.
-return defaultDoctors.map((defaultDoctor) => {
-  const savedDoctor = parsed.find(
-    (doctor) => doctor.id === defaultDoctor.id,
+  return (
+    typeof item.id === "string" &&
+    typeof item.name === "string" &&
+    typeof item.image === "string" &&
+    typeof item.specialty === "string" &&
+    typeof item.qualification === "string" &&
+    typeof item.pmdcNumber === "string" &&
+    Array.isArray(item.languages) &&
+    item.languages.every((language) => typeof language === "string") &&
+    typeof item.feePKR === "number" &&
+    typeof item.feeUSD === "number" &&
+    typeof item.nextAvailableSlot === "string" &&
+    (item.status === "Active" || item.status === "Inactive") &&
+    (item.email === undefined || typeof item.email === "string") &&
+    (item.password === undefined || typeof item.password === "string")
   );
+}
 
-  if (!savedDoctor) {
-    return defaultDoctor;
+/**
+ * Load predefined doctors and merge their saved information.
+ */
+function readDoctors(): Doctor[] {
+  if (typeof window === "undefined") {
+    return defaultDoctors;
   }
 
-  return {
-    ...defaultDoctor,
-    ...savedDoctor,
-    image: savedDoctor.image || defaultDoctor.image,
-    name: savedDoctor.name?.trim() || defaultDoctor.name,
-    specialty:
-      savedDoctor.specialty?.trim() || defaultDoctor.specialty,
-    qualification:
-      savedDoctor.qualification?.trim() ||
-      defaultDoctor.qualification,
-    pmdcNumber:
-      savedDoctor.pmdcNumber?.trim() ||
-      defaultDoctor.pmdcNumber,
-    languages:
-      Array.isArray(savedDoctor.languages) &&
-      savedDoctor.languages.length > 0
-        ? savedDoctor.languages
-        : defaultDoctor.languages,
-    feePKR:
-      Number.isFinite(savedDoctor.feePKR)
-        ? savedDoctor.feePKR
-        : defaultDoctor.feePKR,
-    feeUSD:
-      Number.isFinite(savedDoctor.feeUSD)
-        ? savedDoctor.feeUSD
-        : defaultDoctor.feeUSD,
-    nextAvailableSlot:
-      savedDoctor.nextAvailableSlot?.trim() ||
-      defaultDoctor.nextAvailableSlot,
-    status:
-      savedDoctor.status === "Inactive"
-        ? "Inactive"
-        : "Active",
-  };
-});
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
 
+    if (!saved) {
+      return defaultDoctors;
+    }
 
-} catch (error) {
-console.error("Unable to load doctor details:", error);
-return defaultDoctors;
+    const parsed: unknown = JSON.parse(saved);
+
+    if (!Array.isArray(parsed)) {
+      return defaultDoctors;
+    }
+
+    const savedDoctors = parsed.filter(isDoctor);
+
+    const savedById = new Map(
+      savedDoctors.map((doctor) => [doctor.id, doctor]),
+    );
+
+    return defaultDoctors.map((defaultDoctor) => {
+      const savedDoctor = savedById.get(defaultDoctor.id);
+
+      if (!savedDoctor) {
+        return defaultDoctor;
+      }
+
+      return {
+        ...defaultDoctor,
+        ...savedDoctor,
+
+        email:
+          typeof savedDoctor.email === "string"
+            ? savedDoctor.email
+            : defaultDoctor.email,
+
+        password:
+          typeof savedDoctor.password === "string"
+            ? savedDoctor.password
+            : "",
+
+        image: savedDoctor.image || defaultDoctor.image,
+
+        name: savedDoctor.name.trim() || defaultDoctor.name,
+
+        specialty:
+          savedDoctor.specialty.trim() || defaultDoctor.specialty,
+
+        qualification:
+          savedDoctor.qualification.trim() ||
+          defaultDoctor.qualification,
+
+        pmdcNumber:
+          savedDoctor.pmdcNumber.trim() ||
+          defaultDoctor.pmdcNumber,
+
+        languages:
+          savedDoctor.languages.length > 0
+            ? savedDoctor.languages
+            : defaultDoctor.languages,
+
+        feePKR: Number.isFinite(savedDoctor.feePKR)
+          ? savedDoctor.feePKR
+          : defaultDoctor.feePKR,
+
+        feeUSD: Number.isFinite(savedDoctor.feeUSD)
+          ? savedDoctor.feeUSD
+          : defaultDoctor.feeUSD,
+
+        nextAvailableSlot:
+          savedDoctor.nextAvailableSlot.trim() ||
+          defaultDoctor.nextAvailableSlot,
+
+        status:
+          savedDoctor.status === "Inactive"
+            ? "Inactive"
+            : "Active",
+      };
+    });
+  } catch (error) {
+    console.error("Unable to load doctor details:", error);
+    return defaultDoctors;
+  }
 }
-}
-
 
 function ManageDoctors() {
   const [doctors, setDoctors] = useState<Doctor[]>(readDoctors);
-  const [search, setSearch] = useState("");
   const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
   const [form, setForm] = useState<Doctor | null>(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [storageError, setStorageError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const initializedRef = useRef(false);
 
+  /*
+   * Persist doctor information.
+   * The same storage key must be used by DoctorLogin and other pages.
+   */
   useEffect(() => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(doctors));
+    // Save after the initial state has been loaded.
+    if (!initializedRef.current) {
+      initializedRef.current = true;
 
-  // Notify Navbar and other components about updated doctor details.
-  window.dispatchEvent(new Event("doctorsUpdated"));
-}, [doctors]);
+      // Initialize the storage only if it doesn't exist.
+      if (!localStorage.getItem(STORAGE_KEY)) {
+        try {
+          localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(doctors),
+          );
+        } catch (storageIssue) {
+          console.error("Unable to initialize doctors:", storageIssue);
+          setStorageError(
+            "Doctor data could not be saved in this browser.",
+          );
+        }
+      }
+
+      return;
+    }
+
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(doctors),
+      );
+
+      window.dispatchEvent(new Event("doctorsUpdated"));
+
+      setStorageError("");
+    } catch (storageIssue) {
+      console.error("Unable to save doctor details:", storageIssue);
+
+      setStorageError(
+        "Changes could not be saved. The browser may be out of storage space; try using a smaller photo.",
+      );
+    }
+  }, [doctors]);
 
   useEffect(() => {
     if (!notice) return;
 
-    const timer = window.setTimeout(() => setNotice(""), 3000);
+    const timer = window.setTimeout(() => {
+      setNotice("");
+    }, 3500);
 
     return () => window.clearTimeout(timer);
   }, [notice]);
 
-  const filteredDoctors = useMemo(() => {
-    const query = search.trim().toLowerCase();
+  /*
+   * Refresh doctor records if another page updates localStorage
+   * in the same browser.
+   */
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY) {
+        setDoctors(readDoctors());
+      }
+    };
 
-    if (!query) return doctors;
+    window.addEventListener("storage", handleStorageChange);
 
-    return doctors.filter((doctor) =>
-      [
-        doctor.name,
-        doctor.specialty,
-        doctor.qualification,
-        doctor.pmdcNumber,
-        doctor.languages.join(" "),
-      ].some((value) => value.toLowerCase().includes(query)),
-    );
-  }, [doctors, search]);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
 
   const activeCount = doctors.filter(
     (doctor) => doctor.status === "Active",
@@ -192,11 +290,14 @@ function ManageDoctors() {
 
   const startEditing = (doctor: Doctor) => {
     setEditingDoctor(doctor);
+
     setForm({
       ...doctor,
       languages: [...doctor.languages],
     });
+
     setError("");
+    setNotice("");
   };
 
   const closeModal = () => {
@@ -210,8 +311,15 @@ function ManageDoctors() {
     value: Doctor[K],
   ) => {
     setForm((previous) =>
-      previous ? { ...previous, [key]: value } : previous,
+      previous
+        ? {
+            ...previous,
+            [key]: value,
+          }
+        : previous,
     );
+
+    setError("");
   };
 
   const handleImageUpload = (
@@ -239,7 +347,10 @@ function ManageDoctors() {
       if (typeof reader.result === "string") {
         setForm((previous) =>
           previous
-            ? { ...previous, image: reader.result as string }
+            ? {
+                ...previous,
+                image: reader.result as string,
+              }
             : previous,
         );
 
@@ -258,11 +369,11 @@ function ManageDoctors() {
   const toggleLanguage = (language: string) => {
     if (!form) return;
 
-    const exists = form.languages.includes(language);
+    const selected = form.languages.includes(language);
 
     updateField(
       "languages",
-      exists
+      selected
         ? form.languages.filter((item) => item !== language)
         : [...form.languages, language],
     );
@@ -271,10 +382,52 @@ function ManageDoctors() {
   const saveDoctor = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!form || !editingDoctor) return;
+    if (!form || isSaving) return;
+
+    setError("");
 
     if (!form.name.trim()) {
       setError("Doctor name is required.");
+      return;
+    }
+
+    if (!form.email.trim()) {
+      setError("Doctor login email is required.");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      setError("Enter a valid doctor login email.");
+      return;
+    }
+
+    /*
+     * Prevent duplicate email addresses.
+     */
+    const normalizedEmail = form.email.trim().toLowerCase();
+
+    const emailAlreadyExists = doctors.some(
+      (doctor) =>
+        doctor.id !== form.id &&
+        doctor.email.trim().toLowerCase() === normalizedEmail,
+    );
+
+    if (emailAlreadyExists) {
+      setError("This email is already assigned to another doctor.");
+      return;
+    }
+
+    /*
+     * Require a password when creating/updating credentials.
+     * Existing passwords can remain unchanged.
+     */
+    if (!form.password.trim()) {
+      setError("Please set a login password for this doctor.");
+      return;
+    }
+
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters long.");
       return;
     }
 
@@ -304,7 +457,9 @@ function ManageDoctors() {
       form.feePKR < 0 ||
       form.feeUSD < 0
     ) {
-      setError("Consultation fees must be valid non-negative amounts.");
+      setError(
+        "Consultation fees must be valid non-negative amounts.",
+      );
       return;
     }
 
@@ -313,38 +468,88 @@ function ManageDoctors() {
       return;
     }
 
-    setDoctors((previous) =>
-      previous.map((doctor) =>
-        doctor.id === editingDoctor.id
-          ? {
-              ...form,
-              name: form.name.trim(),
-              specialty: form.specialty.trim(),
-              qualification: form.qualification.trim(),
-              pmdcNumber: form.pmdcNumber.trim(),
-              nextAvailableSlot: form.nextAvailableSlot.trim(),
-            }
-          : doctor,
-      ),
-    );
+    const cleanedDoctor: Doctor = {
+      ...form,
+      name: form.name.trim(),
+      email: normalizedEmail,
+      password: form.password,
+      specialty: form.specialty.trim(),
+      qualification: form.qualification.trim(),
+      pmdcNumber: form.pmdcNumber.trim(),
+      languages: [...form.languages],
+      feePKR: Number(form.feePKR),
+      feeUSD: Number(form.feeUSD),
+      nextAvailableSlot: form.nextAvailableSlot.trim(),
+    };
 
-    closeModal();
-    setNotice("Doctor details updated successfully.");
+    /*
+     * Update the selected doctor without changing other doctors.
+     */
+    setIsSaving(true);
+
+    try {
+      const updatedDoctors = doctors.map((doctor) =>
+        doctor.id === cleanedDoctor.id
+          ? cleanedDoctor
+          : doctor,
+      );
+
+      /*
+       * Save first, so the success notice is only shown
+       * after localStorage accepts the updated information.
+       */
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(updatedDoctors),
+      );
+
+      setDoctors(updatedDoctors);
+
+      window.dispatchEvent(new Event("doctorsUpdated"));
+
+      setNotice(`${cleanedDoctor.name} updated successfully.`);
+
+      closeModal();
+    } catch (storageIssue) {
+      console.error("Unable to save doctor details:", storageIssue);
+
+      setError(
+        "Unable to save changes. Try a smaller profile picture or free browser storage.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const toggleStatus = (doctor: Doctor) => {
-    const nextStatus =
+    const nextStatus: Doctor["status"] =
       doctor.status === "Active" ? "Inactive" : "Active";
 
-    setDoctors((previous) =>
-      previous.map((item) =>
-        item.id === doctor.id
-          ? { ...item, status: nextStatus }
-          : item,
-      ),
+    const updatedDoctors = doctors.map((item) =>
+      item.id === doctor.id
+        ? {
+            ...item,
+            status: nextStatus,
+          }
+        : item,
     );
 
-    setNotice(`${doctor.name} is now ${nextStatus}.`);
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(updatedDoctors),
+      );
+
+      setDoctors(updatedDoctors);
+
+      window.dispatchEvent(new Event("doctorsUpdated"));
+
+      setNotice(`${doctor.name} is now ${nextStatus}.`);
+    } catch (storageIssue) {
+      console.error("Unable to update doctor status:", storageIssue);
+
+      setStorageError("Unable to save the updated doctor status.");
+    }
   };
 
   const summaryCards = [
@@ -368,51 +573,56 @@ function ManageDoctors() {
     },
   ];
 
+  const getDefaultDoctorImage = (doctorId: string) =>
+    doctorId === "nazli" ? drNazliImage : drMunibImage;
+
+  const getDoctorImage = (doctor: Doctor) =>
+    doctor.image || getDefaultDoctorImage(doctor.id);
+
   return (
-    <div className="min-h-screen w-full min-w-0 bg-[#f5f8fc] text-slate-800">
-  <div className="mx-auto w-full max-w-[1600px] space-y-7 p-4 sm:p-7 lg:p-9">
+    <div className="min-h-screen w-full bg-[#f5f8fc] text-slate-800">
+      <div className="mx-auto w-full max-w-[1200px] space-y-7 p-4 sm:p-7 lg:p-9">
+        {/* Page Heading */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
+              <Link
+                to="/admin-dashboard"
+                className="flex items-center gap-1.5 text-slate-500 transition hover:text-[#0B63CE]"
+              >
+                <Home size={15} />
+                Dashboard
+              </Link>
 
+              <ChevronRight size={15} className="text-slate-400" />
 
-    {/* Page Heading */}
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        {/* Breadcrumb */}
-        <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
-          <span className="flex items-center gap-1.5 text-slate-500">
-            <Home size={15} />
-            Dashboard
-          </span>
+              <Link
+                to="/manage-doctors"
+                className="font-semibold text-[#0B63CE] hover:underline"
+              >
+                Manage Doctors
+              </Link>
+            </div>
 
-          <ChevronRight size={15} className="text-slate-400" />
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
+              Manage Doctors
+            </h1>
 
-          <span className="font-semibold text-[#0B63CE]">
-            Manage Doctors
-          </span>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+              Manage doctor profiles, qualifications, consultation fees,
+              languages, and availability.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-white px-4 py-3 text-sm font-semibold text-[#0B63CE] shadow-sm">
+              <Stethoscope size={18} />
+              <span>{doctors.length} Registered Doctors</span>
+            </div>
+          </div>
         </div>
 
-        {/* Page Title */}
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
-          Manage Doctors
-        </h1>
-
-        {/* Page Description */}
-        <p className="mt-2 text-sm leading-6 text-slate-500">
-          Manage doctor profiles, qualifications, consultation fees,
-          languages, and availability.
-        </p>
-      </div>
-
-      {/* Registered Doctors */}
-      <div className="flex w-fit items-center gap-2 rounded-xl border border-blue-100 bg-white px-4 py-3 text-sm font-semibold text-[#0B63CE] shadow-sm">
-        <Stethoscope size={18} />
-        <span>{doctors.length} Registered Doctors</span>
-      </div>
-    </div>
-
-    {/* Success Message */}
-
-
-        {/* Success Message */}
+        {/* Notifications */}
         {notice && (
           <div
             role="status"
@@ -420,6 +630,15 @@ function ManageDoctors() {
           >
             <CheckCircle size={19} />
             {notice}
+          </div>
+        )}
+
+        {storageError && (
+          <div
+            role="alert"
+            className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          >
+            {storageError}
           </div>
         )}
 
@@ -460,168 +679,175 @@ function ManageDoctors() {
           <div className="flex flex-col gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div>
               <h2 className="text-lg font-bold">Doctor Directory</h2>
+
               <p className="mt-1 text-sm text-slate-500">
-                View and update the two registered doctor profiles.
+                View and update all {doctors.length} registered doctor profiles.
               </p>
-            </div>
-
-            <div className="relative w-full sm:max-w-xs">
-              <Search
-                size={18}
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-              />
-
-              <input
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search doctors..."
-                aria-label="Search doctors"
-                className={`${inputClass} pl-10`}
-              />
             </div>
           </div>
 
           <div className="space-y-4 p-4 sm:p-6">
-            {filteredDoctors.length === 0 && (
+            {doctors.length === 0 && (
               <div className="rounded-xl border border-dashed border-slate-200 px-4 py-10 text-center">
-                <Search size={28} className="mx-auto text-slate-300" />
+                <Stethoscope size={28} className="mx-auto text-slate-300" />
 
                 <p className="mt-3 font-semibold">
-                  No doctors found
-                </p>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Try another doctor name or specialty.
+                  No doctor profiles available
                 </p>
               </div>
             )}
 
-            {filteredDoctors.map((doctor) => (
-              <article
-                key={doctor.id}
-                className="rounded-2xl border border-slate-200 p-4 transition hover:border-blue-200 hover:shadow-sm sm:p-5"
-              >
-                <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-                  {/* Doctor Profile */}
-                  <div className="flex min-w-0 items-start gap-4">
-                    <div className="flex h-[84px] w-[84px] shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-blue-50">
-                      <img
-  src={doctor.image || (doctor.id === "munib" ? drMunibImage : drNazliImage)}
-  alt={doctor.name}
-  className="h-full w-full object-cover"
-  onError={(event) => {
-    const fallbackImage =
-      doctor.id === "munib" ? drMunibImage : drNazliImage;
+            {doctors.map((doctor) => {
+              const image = getDoctorImage(doctor);
 
-    if (event.currentTarget.src !== new URL(fallbackImage, window.location.href).href) {
-      event.currentTarget.src = fallbackImage;
-    }
-  }}
-/>
+              return (
+                <article
+                  key={doctor.id}
+                  className="rounded-2xl border border-slate-200 p-4 transition hover:border-blue-200 hover:shadow-sm sm:p-5"
+                >
+                  <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+                    {/* Doctor Profile */}
+                    <div className="flex min-w-0 items-start gap-4">
+                      <div className="flex h-[84px] w-[84px] shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-blue-50">
+                        <img
+                          src={image}
+                          alt={doctor.name}
+                          className="h-full w-full object-cover"
+                          onError={(event) => {
+                            const fallbackImage = getDefaultDoctorImage(
+                              doctor.id,
+                            );
 
-                      {!doctor.image && (
-                        <UserRound size={30} className="text-[#0B63CE]" />
-                      )}
-                    </div>
+                            const fallbackUrl = new URL(
+                              fallbackImage,
+                              window.location.href,
+                            ).href;
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-lg font-bold">
-                          {doctor.name}
-                        </h3>
-
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            doctor.status === "Active"
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-rose-50 text-rose-700"
-                          }`}
-                        >
-                          {doctor.status}
-                        </span>
+                            if (event.currentTarget.src !== fallbackUrl) {
+                              event.currentTarget.src = fallbackImage;
+                            } else {
+                              event.currentTarget.style.display = "none";
+                            }
+                          }}
+                        />
                       </div>
 
-                      <p className="mt-1 text-sm font-medium text-[#0B63CE]">
-                        {doctor.specialty}
-                      </p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-lg font-bold">
+                            {doctor.name}
+                          </h3>
 
-                      <p className="mt-2 text-sm text-slate-600">
-                        <span className="font-semibold">Qualification:</span>{" "}
-                        {doctor.qualification}
-                      </p>
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                              doctor.status === "Active"
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-rose-50 text-rose-700"
+                            }`}
+                          >
+                            {doctor.status}
+                          </span>
+                        </div>
 
-                      <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-                        <BadgeCheck size={16} />
-                        PMDC: {doctor.pmdcNumber}
-                      </p>
+                        <p className="mt-1 text-sm font-medium text-[#0B63CE]">
+                          {doctor.specialty}
+                        </p>
 
-                      <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-                        <Languages size={16} />
-                        {doctor.languages.join(", ")}
-                      </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          <span className="font-semibold">
+                            Qualification:
+                          </span>{" "}
+                          {doctor.qualification}
+                        </p>
+
+                        <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+                          <BadgeCheck size={16} />
+                          PMDC: {doctor.pmdcNumber}
+                        </p>
+
+                        <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+                          <Languages size={16} />
+                          {doctor.languages.join(", ")}
+                        </p>
+
+                        <p className="mt-2 break-all text-sm text-slate-500">
+                          <span className="font-semibold">Login Email:</span>{" "}
+                          {doctor.email}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Fees */}
+                    <div className="grid grid-cols-2 gap-3 sm:min-w-[260px]">
+                      <div className="rounded-xl bg-[#f5f8fc] p-4">
+                        <p className="text-xs text-slate-500">Pakistan</p>
+
+                        <p className="mt-1 text-lg font-bold">
+                          PKR {doctor.feePKR.toLocaleString()}
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl bg-[#f5f8fc] p-4">
+                        <p className="text-xs text-slate-500">
+                          International
+                        </p>
+
+                        <p className="mt-1 text-lg font-bold">
+                          ${doctor.feeUSD}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleStatus(doctor)}
+                        className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
+                          doctor.status === "Active"
+                            ? "border-rose-100 text-rose-600 hover:bg-rose-50"
+                            : "border-emerald-100 text-emerald-700 hover:bg-emerald-50"
+                        }`}
+                      >
+                        {doctor.status === "Active"
+                          ? "Deactivate"
+                          : "Activate"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => startEditing(doctor)}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B63CE] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0955AE]"
+                      >
+                        <Pencil size={16} />
+                        Edit Profile
+                      </button>
                     </div>
                   </div>
 
-                  {/* Fees */}
-                  <div className="grid grid-cols-2 gap-3 sm:min-w-[260px]">
-                    <div className="rounded-xl bg-[#f5f8fc] p-4">
-                      <p className="text-xs text-slate-500">Pakistan</p>
-                      <p className="mt-1 text-lg font-bold">
-                        PKR {doctor.feePKR.toLocaleString()}
-                      </p>
-                    </div>
+                  {/* Next Available Slot */}
+                  <div className="mt-5 flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                      <CalendarDays
+                        size={17}
+                        className="text-[#0B63CE]"
+                      />
 
-                    <div className="rounded-xl bg-[#f5f8fc] p-4">
-                      <p className="text-xs text-slate-500">
-                        International
-                      </p>
-                      <p className="mt-1 text-lg font-bold">
-                        ${doctor.feeUSD}
-                      </p>
-                    </div>
+                      <span className="font-semibold">
+                        Next Available Slot:
+                      </span>
+
+                      <span>{doctor.nextAvailableSlot}</span>
+                    </p>
+
+                    <p className="flex items-center gap-2 text-xs text-slate-400">
+                      <Clock size={15} />
+                      Consultation availability
+                    </p>
                   </div>
-
-                  {/* Actions */}
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => toggleStatus(doctor)}
-                      className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
-                        doctor.status === "Active"
-                          ? "border-rose-100 text-rose-600 hover:bg-rose-50"
-                          : "border-emerald-100 text-emerald-700 hover:bg-emerald-50"
-                      }`}
-                    >
-                      {doctor.status === "Active" ? "Deactivate" : "Activate"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => startEditing(doctor)}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B63CE] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0955AE]"
-                    >
-                      <Pencil size={16} />
-                      Edit Profile
-                    </button>
-                  </div>
-                </div>
-
-                {/* Next Available Slot */}
-                <div className="mt-5 flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="flex items-center gap-2 text-sm text-slate-600">
-                    <CalendarDays size={17} className="text-[#0B63CE]" />
-                    <span className="font-semibold">Next Available Slot:</span>
-                    <span>{doctor.nextAvailableSlot}</span>
-                  </p>
-
-                  <p className="flex items-center gap-2 text-xs text-slate-400">
-                    <Clock size={15} />
-                    Consultation availability
-                  </p>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         </section>
 
@@ -636,34 +862,37 @@ function ManageDoctors() {
         <div
           className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-slate-950/50 p-3 backdrop-blur-sm sm:p-6"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) closeModal();
+            if (event.target === event.currentTarget) {
+              closeModal();
+            }
           }}
         >
           <section
             role="dialog"
             aria-modal="true"
-            aria-labelledby="edit-doctor-title"
+            aria-labelledby="doctor-form-title"
             className="my-4 w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl sm:my-8"
           >
             {/* Modal Header */}
             <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-slate-100 bg-white px-5 py-4 sm:px-7">
               <div>
                 <h2
-                  id="edit-doctor-title"
+                  id="doctor-form-title"
                   className="text-lg font-bold sm:text-xl"
                 >
                   Edit Doctor Profile
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Update {editingDoctor.name}&apos;s patient-facing information.
+                  Update {editingDoctor.name}'s professional information
+                  and login credentials.
                 </p>
               </div>
 
               <button
                 type="button"
                 onClick={closeModal}
-                aria-label="Close edit form"
+                aria-label="Close doctor form"
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100"
               >
                 <X size={21} />
@@ -681,6 +910,7 @@ function ManageDoctors() {
 
                     <div>
                       <h3 className="font-bold">Profile Picture</h3>
+
                       <p className="mt-1 text-xs text-slate-500">
                         JPG or PNG. Maximum file size: 2 MB.
                       </p>
@@ -689,19 +919,22 @@ function ManageDoctors() {
 
                   <div className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-4 sm:flex-row sm:items-center">
                     <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                      {form.image ? (
-                        <img
-                          src={form.image}
-                          alt={form.name}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <UserRound size={35} className="text-slate-300" />
-                      )}
+                      <img
+                        src={form.image || getDefaultDoctorImage(form.id)}
+                        alt={form.name || "Doctor preview"}
+                        className="h-full w-full object-cover"
+                        onError={(event) => {
+                          event.currentTarget.src = getDefaultDoctorImage(
+                            form.id,
+                          );
+                        }}
+                      />
                     </div>
 
                     <div>
-                      <p className="font-semibold">{form.name}</p>
+                      <p className="font-semibold">
+                        {form.name || "Doctor name preview"}
+                      </p>
 
                       <div className="mt-3 flex flex-wrap gap-2">
                         <button
@@ -716,10 +949,15 @@ function ManageDoctors() {
                         {form.image && (
                           <button
                             type="button"
-                            onClick={() => updateField("image", "")}
+                            onClick={() =>
+                              updateField(
+                                "image",
+                                getDefaultDoctorImage(form.id),
+                              )
+                            }
                             className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100"
                           >
-                            Remove Photo
+                            Reset Photo
                           </button>
                         )}
                       </div>
@@ -735,6 +973,68 @@ function ManageDoctors() {
                   </div>
                 </section>
 
+                {/* Doctor Login Credentials */}
+                <section>
+                  <div className="mb-5 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[#0B63CE]">
+                      <BadgeCheck size={19} />
+                    </div>
+
+                    <div>
+                      <h3 className="font-bold">
+                        Doctor Login Credentials
+                      </h3>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        Set the email and password used for this doctor's login.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-semibold">
+                        Login Email *
+                      </span>
+
+                      <input
+                        required
+                        type="email"
+                        autoComplete="off"
+                        className={inputClass}
+                        value={form.email}
+                        onChange={(event) =>
+                          updateField("email", event.target.value)
+                        }
+                        placeholder="doctor@example.com"
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-semibold">
+                        Login Password *
+                      </span>
+
+                      <input
+                        required
+                        type="password"
+                        autoComplete="new-password"
+                        minLength={8}
+                        className={inputClass}
+                        value={form.password}
+                        onChange={(event) =>
+                          updateField("password", event.target.value)
+                        }
+                        placeholder="Minimum 8 characters"
+                      />
+
+                      <span className="mt-1 block text-xs text-slate-400">
+                        At least 8 characters.
+                      </span>
+                    </label>
+                  </div>
+                </section>
+
                 {/* Professional Details */}
                 <section>
                   <div className="mb-5 flex items-center gap-3">
@@ -744,6 +1044,7 @@ function ManageDoctors() {
 
                     <div>
                       <h3 className="font-bold">Professional Details</h3>
+
                       <p className="mt-1 text-xs text-slate-500">
                         Information displayed on the patient-facing profile.
                       </p>
@@ -755,6 +1056,7 @@ function ManageDoctors() {
                       <span className="mb-2 block text-sm font-semibold">
                         Doctor Name *
                       </span>
+
                       <input
                         required
                         className={inputClass}
@@ -770,6 +1072,7 @@ function ManageDoctors() {
                       <span className="mb-2 block text-sm font-semibold">
                         Medical Specialty *
                       </span>
+
                       <input
                         required
                         className={inputClass}
@@ -785,6 +1088,7 @@ function ManageDoctors() {
                       <span className="mb-2 block text-sm font-semibold">
                         Qualifications *
                       </span>
+
                       <input
                         required
                         className={inputClass}
@@ -800,6 +1104,7 @@ function ManageDoctors() {
                       <span className="mb-2 block text-sm font-semibold">
                         PMDC Registration Number *
                       </span>
+
                       <input
                         required
                         className={inputClass}
@@ -822,6 +1127,7 @@ function ManageDoctors() {
 
                     <div>
                       <h3 className="font-bold">Languages</h3>
+
                       <p className="mt-1 text-xs text-slate-500">
                         Select languages available for consultation.
                       </p>
@@ -861,6 +1167,7 @@ function ManageDoctors() {
 
                     <div>
                       <h3 className="font-bold">Consultation Fees</h3>
+
                       <p className="mt-1 text-xs text-slate-500">
                         Set fees for Pakistan and international patients.
                       </p>
@@ -885,7 +1192,10 @@ function ManageDoctors() {
                           className={`${inputClass} pl-14`}
                           value={form.feePKR}
                           onChange={(event) =>
-                            updateField("feePKR", Number(event.target.value))
+                            updateField(
+                              "feePKR",
+                              Number(event.target.value),
+                            )
                           }
                         />
                       </div>
@@ -908,7 +1218,10 @@ function ManageDoctors() {
                           className={`${inputClass} pl-14`}
                           value={form.feeUSD}
                           onChange={(event) =>
-                            updateField("feeUSD", Number(event.target.value))
+                            updateField(
+                              "feeUSD",
+                              Number(event.target.value),
+                            )
                           }
                         />
                       </div>
@@ -925,6 +1238,7 @@ function ManageDoctors() {
 
                     <div>
                       <h3 className="font-bold">Next Available Slot</h3>
+
                       <p className="mt-1 text-xs text-slate-500">
                         Enter the next slot displayed to patients.
                       </p>
@@ -971,6 +1285,7 @@ function ManageDoctors() {
 
                     <div>
                       <h3 className="font-bold">Account Status</h3>
+
                       <p className="mt-1 text-xs text-slate-500">
                         Activate or deactivate this doctor's profile.
                       </p>
@@ -998,6 +1313,7 @@ function ManageDoctors() {
                   </label>
                 </section>
 
+                {/* Validation Error */}
                 {error && (
                   <div
                     role="alert"
@@ -1020,10 +1336,11 @@ function ManageDoctors() {
 
                 <button
                   type="submit"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B63CE] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0955AE]"
+                  disabled={isSaving}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0B63CE] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0955AE] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Save size={17} />
-                  Save Changes
+                  {isSaving ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </form>

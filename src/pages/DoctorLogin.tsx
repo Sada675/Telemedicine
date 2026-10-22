@@ -21,40 +21,76 @@ function DoctorLogin() {
 
   // Demo Doctor Login
   // Temporary Demo Doctor Credentials
-  const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError("");
+const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
-    if (!email.trim() || !password) {
-      setError("Please enter your email and password.");
+  try {
+    // Get doctors saved by Admin Dashboard
+    const savedDoctors = localStorage.getItem("telemedicineAdminDoctors");
+
+    if (!savedDoctors) {
+      setError(
+        "No doctor accounts found. Please ask the administrator to set up your account."
+      );
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
+    const doctors = JSON.parse(savedDoctors);
 
-    // Dummy doctor account for testing
-    const savedDoctorEmail = "doctor@example.com";
-    const savedDoctorPassword = "Doctor123";
-
-    if (
-      email.trim().toLowerCase() === savedDoctorEmail &&
-      password === savedDoctorPassword
-    ) {
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("userRole", "doctor");
-      localStorage.setItem("userName", "Dr. Munib");
-
-      // Notify the Navbar about the login
-      window.dispatchEvent(new Event("authChange"));
-
-      navigate("/doctor-dashboard");
-    } else {
+    if (!Array.isArray(doctors)) {
+      setError("Unable to load doctor accounts. Please contact the administrator.");
       setLoading(false);
-      setError(
-        "Invalid email or password. Please check your demo credentials."
-      );
+      return;
     }
-  };
+
+    // Find doctor using the latest email and password
+    const doctor = doctors.find(
+      (item: {
+        id: string;
+        name: string;
+        email: string;
+        password: string;
+        status?: string;
+      }) =>
+        item.email?.trim().toLowerCase() === email.trim().toLowerCase() &&
+        item.password &&
+        item.password === password
+    );
+
+    if (!doctor) {
+      setError("Invalid email or password. Please try again.");
+      setLoading(false);
+      return;
+    }
+
+    // Prevent inactive doctors from logging in
+    if (doctor.status?.toLowerCase() === "inactive") {
+      setError("Your account is inactive. Please contact the administrator.");
+      setLoading(false);
+      return;
+    }
+
+    // Save logged-in doctor's information
+    localStorage.setItem("isLoggedIn", "true");
+    localStorage.setItem("userRole", "doctor");
+    localStorage.setItem("userName", doctor.name);
+    localStorage.setItem("doctorId", doctor.id);
+    localStorage.setItem("doctorEmail", doctor.email);
+
+    // Notify the application about the login
+    window.dispatchEvent(new Event("authChange"));
+
+    // Redirect to Doctor Dashboard
+    navigate("/doctor-dashboard");
+  } catch (error) {
+    console.error("Doctor login error:", error);
+    setError("Something went wrong. Please try again.");
+    setLoading(false);
+  }
+};
 
 
   return (

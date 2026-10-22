@@ -22,7 +22,7 @@ description: "View and manage registered patient accounts.",
 title: "Manage Appointments",
 description: "Review and manage appointment requests.",
 },
-"/notifications": {
+"/admin-notifications": {
 title: "Notifications",
 description: "Stay updated with platform activity.",
 },
@@ -41,7 +41,7 @@ title: "Admin Dashboard",
 description: "Manage your telemedicine platform.",
 };
 
-return ( <header className="sticky top-0 z-30 flex min-h-[70px] w-full items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-6 lg:px-8">
+return ( <header className="sticky top-0 z-30 flex min-h-[70px] w-full items-center justify-between gap-3 border-b border-slate-900 bg-[#420704] px-4 py-4 shadow-sm sm:px-6 lg:px-8">
 {/* Left Side */} <div className="flex min-w-0 items-center gap-3 sm:gap-4">
 <button
 type="button"
@@ -51,11 +51,11 @@ aria-label="Open sidebar"
 > <Menu size={23} /> </button>
 
     <div className="min-w-0">
-      <h2 className="truncate text-lg font-bold leading-tight text-[#183b3b] sm:text-xl">
+      <h2 className="truncate text-lg font-bold leading-tight text-white/95 sm:text-xl">
         {currentPage.title}
       </h2>
 
-      <p className=" text-xs leading-relaxed text-slate-500 sm:text-sm">
+      <p className=" text-xs leading-relaxed text-slate-200 sm:text-sm">
         {currentPage.description}
       </p>
     </div>
@@ -65,9 +65,9 @@ aria-label="Open sidebar"
   <div className="flex shrink-0 items-center gap-3 sm:gap-5">
     <button
       type="button"
-      onClick={() => navigate("/notifications")}
+      onClick={() => navigate("/admin-notifications")}
       aria-label="Open notifications"
-      className="relative rounded-xl border border-slate-200 p-2.5 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#0B63CE]"
+      className="relative rounded-xl bg-white border border-slate-200 p-2.5 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#0B63CE]"
     >
       <Bell size={20} />
 
@@ -80,11 +80,11 @@ aria-label="Open sidebar"
       </div>
 
       <div className="hidden flex-col gap-1 md:flex">
-        <p className="text-sm font-semibold leading-tight text-slate-800">
+        <p className="text-sm font-semibold leading-tight text-slate-200">
           Administrator
         </p>
 
-        <p className="text-xs leading-tight text-slate-500">
+        <p className="text-xs leading-tight text-slate-100">
           Admin Account
         </p>
       </div>

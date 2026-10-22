@@ -41,7 +41,7 @@ const navigation = [
   {
     name: "Notifications",
     icon: Bell,
-    path: "/notifications",
+    path: "/admin-notifications",
   },
   {
     name: "Settings",
@@ -73,34 +73,34 @@ function AdminSidebar({
         <button
           type="button"
           aria-label="Close sidebar overlay"
-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-100 bg-white transition-transform duration-300 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-white/10 bg-[#420704] shadow-xl transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
         {/* Logo */}
-        <div className="flex h-20 shrink-0 items-center justify-between border-b border-slate-100 px-6">
+        <div className="flex h-20 shrink-0 items-center justify-between border-b border-white/15 px-5">
           <Link
             to="/admin-dashboard"
             onClick={() => setSidebarOpen(false)}
             className="flex items-center gap-3"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0B63CE] text-white">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0B63CE] text-white ring-1 ring-white/20">
               <Plus size={28} strokeWidth={3} />
             </div>
 
             <div>
-              <h1 className="text-lg font-bold text-[#183b3b]">
+              <h1 className="text-lg font-bold tracking-wide text-white">
                 Telemedicine
               </h1>
 
-              <p className="text-xs text-slate-500">
+              <p className="text-xs font-medium text-white/90">
                 Admin Panel
               </p>
             </div>
@@ -110,7 +110,7 @@ function AdminSidebar({
           <button
             type="button"
             onClick={() => setSidebarOpen(false)}
-            className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 lg:hidden"
+            className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white lg:hidden"
             aria-label="Close sidebar"
           >
             <X size={20} />
@@ -119,7 +119,7 @@ function AdminSidebar({
 
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto px-4 pt-7">
-          <p className="mb-4 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <p className="mb-4 px-3 text-xs font-semibold uppercase tracking-[0.15em] text-white/80">
             Main Menu
           </p>
 
@@ -134,19 +134,22 @@ function AdminSidebar({
                   end
                   onClick={() => setSidebarOpen(false)}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                    `group flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-200 ${
                       isActive
-                        ? "bg-[#0B63CE] text-white shadow-md shadow-blue-100"
-                        : "text-slate-600 hover:bg-blue-50 hover:text-[#0B63CE]"
+                        ? "border-white/15 bg-[#0B63CE] text-white shadow-lg shadow-black/10"
+                        : "border-transparent text-white/85 hover:border-white/10 hover:bg-white/10 hover:text-white"
                     }`
                   }
                 >
-                  <Icon size={19} />
+                  <Icon
+                    size={19}
+                    className="shrink-0 transition-transform duration-200 group-hover:scale-105"
+                  />
 
                   <span>{item.name}</span>
 
                   {item.name === "Notifications" && (
-                    <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">
+                    <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-xs font-semibold text-white">
                       3
                     </span>
                   )}
@@ -157,18 +160,18 @@ function AdminSidebar({
         </div>
 
         {/* Admin Profile & Logout */}
-        <div className="shrink-0 border-t border-slate-100 p-4">
-          <div className="mb-4 flex items-center gap-3 rounded-xl bg-[#f8faf9] p-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[#0B63CE]">
+        <div className="shrink-0 border-t border-white/15 p-4">
+          <div className="mb-3 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white ring-1 ring-white/15">
               <UserRound size={21} />
             </div>
 
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-800">
+              <p className="truncate text-sm font-semibold text-white">
                 Administrator
               </p>
 
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-rose-200/75">
                 Super Admin
               </p>
             </div>
@@ -177,7 +180,7 @@ function AdminSidebar({
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50"
+            className="flex w-full items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-sm font-medium text-white/90 transition-all duration-200 hover:border-rose-300/15 hover:bg-rose-500/10 hover:text-white"
           >
             <LogOut size={19} />
             Logout

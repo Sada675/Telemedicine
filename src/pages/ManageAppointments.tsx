@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import {
   Search,
   Eye,
@@ -17,12 +18,12 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  ChevronsUpDown,
   Stethoscope,
   Users,
   X,
   RotateCcw,
   ClipboardCheck,
+  Home,
 } from "lucide-react";
 
 type AppointmentStatus =
@@ -393,10 +394,41 @@ function AdminAppointments() {
     endIndex
   );
 
-  const pageNumbers = Array.from(
-    { length: totalPages },
-    (_, index) => index + 1
-  );
+  // Generate compact pagination buttons with ellipses.
+  const pageNumbers: (number | "ellipsis")[] = [];
+
+  if (totalPages <= 5) {
+    for (let page = 1; page <= totalPages; page += 1) {
+      pageNumbers.push(page);
+    }
+  } else {
+    pageNumbers.push(1);
+
+    if (safeCurrentPage > 3) {
+      pageNumbers.push("ellipsis");
+    }
+
+    const firstMiddlePage = Math.max(2, safeCurrentPage - 1);
+    const lastMiddlePage = Math.min(
+      totalPages - 1,
+      safeCurrentPage + 1
+    );
+
+    for (
+      let page = firstMiddlePage;
+      page <= lastMiddlePage;
+      page += 1
+    ) {
+      pageNumbers.push(page);
+    }
+
+    if (safeCurrentPage < totalPages - 2) {
+      pageNumbers.push("ellipsis");
+    }
+
+    pageNumbers.push(totalPages);
+  }
+
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -429,28 +461,58 @@ function AdminAppointments() {
   }
 
   function changeRowsPerPage(value: number) {
-    const nextValue = Math.max(1, Math.min(100, value));
+  if (
+    !Number.isInteger(value) ||
+    value < 1 ||
+    value > 10000
+  ) {
+    return;
+  }
 
-    setRowsPerPage(nextValue);
-    setRowsPerPageInput(String(nextValue));
+  setRowsPerPage(value);
+  setRowsPerPageInput(String(value));
+
+  setCurrentPage(1);
+  setPageInput("1");
+  setPageDropdownOpen(false);
+}
+
+
+function handleRowsPerPageInput(value: string) {
+  setRowsPerPageInput(value);
+
+  if (value.trim() === "") return;
+
+  const number = Number(value);
+
+  if (
+    Number.isInteger(number) &&
+    number >= 1 &&
+    number <= 10000
+  ) {
+    setRowsPerPage(number);
     setCurrentPage(1);
     setPageInput("1");
+    setPageDropdownOpen(false);
+  }
+}
+  
+
+function validateRowsPerPageInput() {
+  const value = Number(rowsPerPageInput);
+
+  if (
+    rowsPerPageInput.trim() === "" ||
+    !Number.isInteger(value) ||
+    value < 1 ||
+    value > 10000
+  ) {
+    setRowsPerPageInput(String(rowsPerPage));
+    return;
   }
 
-  function validateRowsPerPageInput() {
-    const value = Number(rowsPerPageInput);
-
-    if (
-      rowsPerPageInput.trim() === "" ||
-      !Number.isInteger(value) ||
-      value < 1
-    ) {
-      setRowsPerPageInput(String(rowsPerPage));
-      return;
-    }
-
-    changeRowsPerPage(value);
-  }
+  changeRowsPerPage(value);
+}
 
   function updateStatus(
     appointmentId: string,
@@ -513,37 +575,59 @@ function AdminAppointments() {
     dateFilter !== "";
 
   return (
-    <div className="min-h-screen bg-[#f8faf9] text-slate-800">
-      <main className="space-y-6 p-4 sm:p-6 lg:p-8">
-        {/* Page heading */}
-        <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            <p className="text-sm font-medium text-[#0B63CE]">
-              Appointment Management
-            </p>
+  <div className="min-h-screen w-full bg-[#f8faf9] text-slate-800">
+  <main className="mx-auto w-full max-w-[1200px] space-y-7 px-4 py-9 sm:px-6 lg:px-8 xl:px-10">
+ 
+{/* Page Heading */}
+<section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    {/* Breadcrumb */}
+    <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
+      <Link
+        to="/admin-dashboard"
+        className="flex items-center gap-1.5 text-slate-500 transition hover:text-[#0B63CE]"
+      >
+        <Home size={15} />
+        Dashboard
+      </Link>
 
-            <h1 className="mt-1 text-2xl font-bold text-[#183b3b] sm:text-3xl">
-              All Appointments
-            </h1>
+      <ChevronRight size={15} className="text-slate-400" />
 
-            <p className="mt-2 text-sm text-slate-500">
-              View, filter and manage patient appointments from one place.
-            </p>
-          </div>
+      <span className="font-semibold text-[#0B63CE]">
+        Manage Appointments
+      </span>
+    </div>
 
-          <div className="flex w-fit items-center gap-3 rounded-xl border border-blue-100 bg-white px-4 py-3 shadow-sm">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[#0B63CE]">
-              <CalendarCheck size={20} />
-            </div>
+    {/* Heading */}
+    <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
+      Manage Appointments
+    </h1>
 
-            <div>
-              <p className="text-xl font-bold text-[#183b3b]">
-                {appointments.length}
-              </p>
-              <p className="text-xs text-slate-500">Total records</p>
-            </div>
-          </div>
-        </section>
+    {/* Description */}
+    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+      View, filter and manage patient appointments, consultation schedules,
+      and appointment statuses.
+    </p>
+  </div>
+
+  {/* Total Appointments */}
+  <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm">
+    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-[#0B63CE]">
+      <CalendarCheck size={21} />
+    </div>
+
+    <div>
+      <p className="text-xs font-medium text-slate-400">
+        Total Appointments
+      </p>
+
+      <p className="mt-1 text-sm font-extrabold text-[#183b3b]">
+        {appointments.length} registered
+      </p>
+    </div>
+  </div>
+</section>
+
 
         {/* Success notice */}
         {notice && (
@@ -886,172 +970,251 @@ function AdminAppointments() {
             </table>
           </div>
 
-          {/* Pagination footer */}
-          <div className="flex flex-col gap-4 border-t border-slate-100 bg-[#fcfdff] px-5 py-4 sm:px-6">
-            <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-              {/* Rows per page */}
-              <div className="flex flex-wrap items-center gap-3">
-                <label
-                  htmlFor="appointments-rows-per-page"
-                  className="text-sm text-slate-500"
-                >
-                  Rows per page
-                </label>
+{/* Pagination footer */}
+<div className="flex flex-col gap-4 border-t border-slate-100 bg-[#fcfdff] px-5 py-4 sm:px-6">
+  <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+    {/* Rows per page and summary */}
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
+      <label
+        htmlFor="appointments-rows-per-page"
+        className="whitespace-nowrap text-[11px] text-slate-500"
+      >
+        Result per page:
+      </label>
 
-                <input
-                  id="appointments-rows-per-page"
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={rowsPerPageInput}
-                  onChange={(event) => {
-                    const value = event.target.value;
+      <select
+        aria-label="Choose rows per page"
+        value={
+          [3, 5, 10, 20].includes(rowsPerPage)
+            ? String(rowsPerPage)
+            : "custom"
+        }
+        onChange={(event) => {
+          if (event.target.value !== "custom") {
+            changeRowsPerPage(Number(event.target.value));
+          }
+        }}
+        className="w-[85px] rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#0B63CE] focus:ring-4 focus:ring-blue-50"
+      >
+        <option value="3">3</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="20">20</option>
+      </select>
 
-                    if (
-                      value === "" ||
-                      (/^\d+$/.test(value) && Number(value) <= 100)
-                    ) {
-                      setRowsPerPageInput(value);
-                    }
-                  }}
-                  onBlur={validateRowsPerPageInput}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      validateRowsPerPageInput();
-                      event.currentTarget.blur();
-                    }
-                  }}
-                  className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-2 text-center text-sm font-semibold text-slate-700 outline-none focus:border-[#0B63CE] focus:ring-2 focus:ring-blue-100"
-                />
+      <input
+        id="appointments-rows-per-page"
+        type="number"
+        min={1}
+        max={10000}
+        step={1}
+        value={rowsPerPageInput}
+        onChange={(event) =>
+          handleRowsPerPageInput(event.target.value)
+        }
+        onBlur={validateRowsPerPageInput}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.currentTarget.blur();
+          }
+        }}
+        aria-label="Enter custom rows per page"
+        className="w-[76px] rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#0B63CE] focus:ring-4 focus:ring-blue-50"
+      />
 
-                <span className="text-xs text-slate-400">
-                  Showing{" "}
-                  <span className="font-semibold text-slate-700">
-                    {filteredAppointments.length === 0 ? 0 : startIndex + 1}
-                    {"–"}
-                    {endIndex}
-                  </span>{" "}
-                  of{" "}
-                  <span className="font-semibold text-slate-700">
-                    {filteredAppointments.length}
-                  </span>
-                </span>
-              </div>
+      <p className="text-[11px] text-slate-500" aria-live="polite">
+        Showing{" "}
+        <span className="font-bold text-slate-700">
+          {startIndex + (filteredAppointments.length > 0 ? 1 : 0)}–{endIndex}
+        </span>{" "}
+        of{" "}
+        <span className="font-bold text-slate-700">
+          {filteredAppointments.length}
+        </span>{" "}
+        appointments
+      </p>
+    </div>
 
-              {/* Go to page */}
-              <div
-                ref={pageDropdownRef}
-                className="relative flex items-center gap-2"
+    {/* Page Selection: dropdown opens upward */}
+    <div
+      ref={pageDropdownRef}
+      className="relative flex items-center gap-2"
+    >
+      <label
+        htmlFor="appointments-page-input"
+        className="whitespace-nowrap text-[11px] font-medium text-slate-500"
+      >
+        Go to page:
+      </label>
+
+      <div className="relative w-[112px]">
+        <input
+          id="appointments-page-input"
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          value={pageInput}
+          onFocus={() => setPageDropdownOpen(true)}
+          onClick={() => setPageDropdownOpen(true)}
+          onChange={(event) =>
+            handlePageInput(event.target.value)
+          }
+          onBlur={() => {
+            window.setTimeout(() => {
+              if (
+                !pageDropdownRef.current?.contains(
+                  document.activeElement,
+                )
+              ) {
+                validatePageInput();
+              }
+            }, 0);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              validatePageInput();
+              setPageDropdownOpen(false);
+              event.currentTarget.blur();
+            }
+
+            if (event.key === "Escape") {
+              setPageInput(String(safeCurrentPage));
+              setPageDropdownOpen(false);
+              event.currentTarget.blur();
+            }
+
+            if (event.key === "ArrowDown") {
+              event.preventDefault();
+              setPageDropdownOpen(true);
+            }
+          }}
+          aria-label="Enter page number"
+          aria-expanded={pageDropdownOpen}
+          aria-controls="appointments-page-options"
+          aria-autocomplete="list"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 pr-8 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#0B63CE] focus:ring-4 focus:ring-blue-50"
+        />
+
+        <button
+          type="button"
+          aria-label="Toggle page selection"
+          aria-expanded={pageDropdownOpen}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() =>
+            setPageDropdownOpen((open) => !open)
+          }
+          className="absolute inset-y-0 right-0 flex w-8 items-center justify-center text-slate-400 transition hover:text-[#0B63CE]"
+        >
+          <ChevronDown
+            size={15}
+            className={`transition-transform ${
+              pageDropdownOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {pageDropdownOpen && (
+          <div
+            id="appointments-page-options"
+            role="listbox"
+            aria-label="Available pages"
+            className="absolute bottom-full left-0 z-50 mb-2 max-h-48 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-300/40"
+          >
+            {Array.from(
+              { length: totalPages },
+              (_, index) => index + 1,
+            ).map((page) => (
+              <button
+                key={page}
+                type="button"
+                role="option"
+                aria-selected={safeCurrentPage === page}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => goToPage(page)}
+                className={`mb-0.5 flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-semibold transition last:mb-0 ${
+                  safeCurrentPage === page
+                    ? "bg-blue-50 text-[#0B63CE]"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-[#0B63CE]"
+                }`}
               >
-                <label
-                  htmlFor="appointments-page-input"
-                  className="whitespace-nowrap text-sm text-slate-500"
-                >
-                  Go to page
-                </label>
+                <span>Page {page}</span>
 
-                <input
-                  id="appointments-page-input"
-                  type="number"
-                  min={1}
-                  max={totalPages}
-                  value={pageInput}
-                  onChange={(event) =>
-                    handlePageInput(event.target.value)
-                  }
-                  onBlur={validatePageInput}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      validatePageInput();
-                      event.currentTarget.blur();
-                    }
-                  }}
-                  className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-2 text-center text-sm font-semibold text-slate-700 outline-none focus:border-[#0B63CE] focus:ring-2 focus:ring-blue-100"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => setPageDropdownOpen((open) => !open)}
-                  aria-label="Select page"
-                  aria-expanded={pageDropdownOpen}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#0B63CE]"
-                >
-                  <ChevronsUpDown size={15} />
-                </button>
-
-                {pageDropdownOpen && (
-                  <div
-                    id="appointments-page-options"
-                    className="absolute bottom-full right-0 z-20 mb-2 max-h-48 w-36 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl"
-                  >
-                    {pageNumbers.map((page) => (
-                      <button
-                        type="button"
-                        key={page}
-                        onClick={() => goToPage(page)}
-                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
-                          safeCurrentPage === page
-                            ? "bg-blue-50 font-semibold text-[#0B63CE]"
-                            : "text-slate-600 hover:bg-slate-50"
-                        }`}
-                      >
-                        Page {page}
-                        {safeCurrentPage === page && (
-                          <CheckCircle2 size={15} />
-                        )}
-                      </button>
-                    ))}
-                  </div>
+                {safeCurrentPage === page && (
+                  <CheckCircle2
+                    size={14}
+                    className="text-[#0B63CE]"
+                  />
                 )}
-              </div>
-
-              {/* Page navigation */}
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => goToPage(safeCurrentPage - 1)}
-                  disabled={safeCurrentPage <= 1}
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#0B63CE] disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <ChevronLeft size={16} />
-                  <span>Previous</span>
-                </button>
-
-                {pageNumbers.map((page) => (
-                  <button
-                    type="button"
-                    key={page}
-                    onClick={() => goToPage(page)}
-                    aria-current={
-                      safeCurrentPage === page ? "page" : undefined
-                    }
-                    className={`flex h-9 min-w-9 items-center justify-center rounded-lg px-2.5 text-sm font-semibold transition ${
-                      safeCurrentPage === page
-                        ? "bg-[#0B63CE] text-white shadow-sm"
-                        : "border border-transparent text-slate-600 hover:border-slate-200 hover:bg-white"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={() => goToPage(safeCurrentPage + 1)}
-                  disabled={safeCurrentPage >= totalPages}
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#0B63CE] disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <span>Next</span>
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-col justify-between gap-2 border-t border-slate-100 pt-3 text-xs text-slate-500 sm:flex-row sm:items-center">
-              <p>Appointment management overview</p>
-              <p>Appointment records are saved in this browser.</p>
-            </div>
+              </button>
+            ))}
           </div>
+        )}
+      </div>
+
+      <span className="whitespace-nowrap text-[10px] text-slate-400">
+        of {totalPages}
+      </span>
+    </div>
+
+    {/* Previous, page numbers and next */}
+    <div className="flex flex-wrap items-center gap-1.5 self-start sm:self-auto">
+      <button
+        type="button"
+        onClick={() => goToPage(safeCurrentPage - 1)}
+        disabled={safeCurrentPage <= 1}
+        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-[#0B63CE] hover:text-[#0B63CE] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:text-slate-600"
+        aria-label="Previous page"
+      >
+        <ChevronLeft size={15} />
+        <span className="hidden sm:inline">Previous</span>
+      </button>
+
+      {pageNumbers.map((page, index) =>
+        page === "ellipsis" ? (
+          <span
+            key={`ellipsis-${index}`}
+            className="px-1 text-xs text-slate-400"
+          >
+            …
+          </span>
+        ) : (
+          <button
+            key={page}
+            type="button"
+            onClick={() => goToPage(page)}
+            aria-label={`Go to page ${page}`}
+            aria-current={
+              safeCurrentPage === page ? "page" : undefined
+            }
+            className={`h-9 min-w-9 rounded-lg px-2.5 text-xs font-bold transition ${
+              safeCurrentPage === page
+                ? "bg-[#0B63CE] text-white shadow-sm"
+                : "border border-slate-200 bg-white text-slate-600 hover:border-[#0B63CE] hover:text-[#0B63CE]"
+            }`}
+          >
+            {page}
+          </button>
+        ),
+      )}
+
+      <button
+        type="button"
+        onClick={() => goToPage(safeCurrentPage + 1)}
+        disabled={safeCurrentPage >= totalPages}
+        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-[#0B63CE] hover:text-[#0B63CE] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:text-slate-600"
+        aria-label="Next page"
+      >
+        <span className="hidden sm:inline">Next</span>
+        <ChevronRight size={15} />
+      </button>
+    </div>
+  </div>
+
+  <p className="text-[10px] text-slate-400">
+    Appointment information overview · Sample data
+  </p>
+</div>
+
         </section>
       </main>
 

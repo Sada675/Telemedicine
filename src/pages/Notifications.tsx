@@ -6,6 +6,8 @@ import {
   Check,
   CheckCheck,
   ChevronDown,
+  ChevronRight,
+  Home,
   CreditCard,
   FileText,
   Clock,
@@ -13,12 +15,15 @@ import {
   MoreHorizontal,
   Trash2,
   Inbox,
+  Users,
+  Stethoscope,
+  ShieldCheck,
 } from "lucide-react";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-type UserRole = "patient" | "doctor";
+type UserRole = "patient" | "doctor" | "admin";
 
 type NotificationType =
   | "appointment"
@@ -43,8 +48,17 @@ interface NotificationItem {
   read: boolean;
 }
 
+interface NotificationsProps {
+  adminMode?: boolean;
+}
+
 const PATIENT_STORAGE_KEY = "telemedicineNotifications";
 const DOCTOR_STORAGE_KEY = "telemedicineDoctorNotifications";
+const ADMIN_STORAGE_KEY = "telemedicineAdminNotifications";
+
+/* =========================================================
+   PATIENT NOTIFICATIONS
+========================================================= */
 
 const patientNotifications: NotificationItem[] = [
   {
@@ -103,6 +117,10 @@ const patientNotifications: NotificationItem[] = [
   },
 ];
 
+/* =========================================================
+   DOCTOR NOTIFICATIONS
+========================================================= */
+
 const doctorNotifications: NotificationItem[] = [
   {
     id: 101,
@@ -160,6 +178,71 @@ const doctorNotifications: NotificationItem[] = [
   },
 ];
 
+/* =========================================================
+   ADMIN NOTIFICATIONS
+========================================================= */
+
+const adminNotifications: NotificationItem[] = [
+  {
+    id: 201,
+    type: "appointment",
+    title: "New Appointment Activity",
+    message:
+      "A new appointment request has been received. Review its details and current status.",
+    time: "10 minutes ago",
+    read: false,
+  },
+  {
+    id: 202,
+    type: "system",
+    title: "Patient Management",
+    message:
+      "Review registered patients and check their account information from the admin panel.",
+    time: "30 minutes ago",
+    read: false,
+  },
+  {
+    id: 203,
+    type: "system",
+    title: "Doctor Management",
+    message:
+      "Review doctor profiles, qualifications, availability, and account status.",
+    time: "1 hour ago",
+    read: false,
+  },
+  {
+    id: 204,
+    type: "payment",
+    title: "Payment Monitoring",
+    message:
+      "Review appointment records to monitor consultation and payment activity.",
+    time: "Yesterday, 3:45 PM",
+    read: true,
+  },
+  {
+    id: 205,
+    type: "reminder",
+    title: "Pending Appointments Review",
+    message:
+      "Check appointment requests and ensure their statuses are up to date.",
+    time: "Yesterday, 11:20 AM",
+    read: true,
+  },
+  {
+    id: 206,
+    type: "system",
+    title: "Welcome to the Admin Panel",
+    message:
+      "Manage doctors, patients, appointments, and other platform activities from your dashboard.",
+    time: "2 days ago",
+    read: true,
+  },
+];
+
+/* =========================================================
+   FILTER OPTIONS
+========================================================= */
+
 const filterOptions: {
   label: string;
   value: FilterType;
@@ -171,37 +254,76 @@ const filterOptions: {
   { label: "Prescriptions", value: "prescriptions" },
 ];
 
-function getUserRole(): UserRole {
-  const role = (
-    localStorage.getItem("userRole") || "patient"
-  ).toLowerCase();
+/* =========================================================
+   ROLE HELPERS
+========================================================= */
 
-  return role === "doctor" ? "doctor" : "patient";
+function getUserRole(): UserRole {
+  if (typeof window === "undefined") {
+    return "patient";
+  }
+
+  const savedRole = (
+    localStorage.getItem("userRole") || "patient"
+  )
+    .trim()
+    .toLowerCase();
+
+  if (savedRole === "admin") {
+    return "admin";
+  }
+
+  if (savedRole === "doctor") {
+    return "doctor";
+  }
+
+  return "patient";
 }
 
-function getStorageKey(role: UserRole) {
-  return role === "doctor"
-    ? DOCTOR_STORAGE_KEY
-    : PATIENT_STORAGE_KEY;
+function getStorageKey(role: UserRole): string {
+  switch (role) {
+    case "admin":
+      return ADMIN_STORAGE_KEY;
+
+    case "doctor":
+      return DOCTOR_STORAGE_KEY;
+
+    default:
+      return PATIENT_STORAGE_KEY;
+  }
 }
 
 function getInitialNotifications(
-  role: UserRole
+  role: UserRole,
 ): NotificationItem[] {
-  return role === "doctor"
-    ? doctorNotifications
-    : patientNotifications;
+  switch (role) {
+    case "admin":
+      return adminNotifications;
+
+    case "doctor":
+      return doctorNotifications;
+
+    default:
+      return patientNotifications;
+  }
 }
+
+/* =========================================================
+   NOTIFICATION ICONS
+========================================================= */
 
 function getIcon(type: NotificationType) {
   switch (type) {
     case "appointment":
     case "reminder":
       return CalendarDays;
+
     case "payment":
       return CreditCard;
+
     case "prescription":
       return FileText;
+
     default:
       return Info;
   }
@@ -211,30 +333,54 @@ function getIconStyle(type: NotificationType) {
   switch (type) {
     case "appointment":
       return "bg-blue-50 text-[#0B63CE]";
+
     case "payment":
       return "bg-emerald-50 text-emerald-600";
+
     case "prescription":
       return "bg-violet-50 text-violet-600";
+
     case "reminder":
       return "bg-amber-50 text-amber-600";
+
     default:
       return "bg-slate-100 text-slate-600";
   }
 }
 
+/* =========================================================
+   ACTION LINKS
+========================================================= */
+
 function getActionLink(
   type: NotificationType,
-  role: UserRole
-) {
+  role: UserRole,
+): string {
+  if (role === "admin") {
+    switch (type) {
+      case "appointment":
+      case "reminder":
+      case "payment":
+        return "/manage-appointments";
+
+      case "prescription":
+        return "/manage-appointments";
+
+      default:
+        return "/admin-dashboard";
+    }
+  }
+
   if (role === "doctor") {
     switch (type) {
       case "appointment":
       case "reminder":
-        return "/doctor-appointments";
-      case "prescription":
-        return "/doctor-prescriptions";
       case "payment":
         return "/doctor-appointments";
+
+      case "prescription":
+        return "/doctor-prescriptions";
+
       default:
         return "/doctor-dashboard";
     }
@@ -243,11 +389,12 @@ function getActionLink(
   switch (type) {
     case "appointment":
     case "reminder":
-      return "/appointments";
     case "payment":
       return "/appointments";
+
     case "prescription":
       return "/prescriptions";
+
     default:
       return "/patient-dashboard";
   }
@@ -255,17 +402,37 @@ function getActionLink(
 
 function getActionText(
   type: NotificationType,
-  role: UserRole
-) {
+  role: UserRole,
+): string {
+  if (role === "admin") {
+    switch (type) {
+      case "appointment":
+      case "reminder":
+        return "Manage appointments";
+
+      case "payment":
+        return "Review appointment records";
+
+      case "prescription":
+        return "View appointment records";
+
+      default:
+        return "Open admin dashboard";
+    }
+  }
+
   if (role === "doctor") {
     switch (type) {
       case "appointment":
       case "reminder":
         return "View appointments";
+
       case "payment":
         return "View appointments";
+
       case "prescription":
         return "View prescriptions";
+
       default:
         return "View dashboard";
     }
@@ -275,20 +442,33 @@ function getActionText(
     case "appointment":
     case "reminder":
       return "View appointment";
+
     case "payment":
       return "View payment";
+
     case "prescription":
       return "View prescription";
+
     default:
       return "View dashboard";
   }
 }
 
-function Notifications() {
-  const [role, setRole] = useState<UserRole>(getUserRole);
+/* =========================================================
+   MAIN COMPONENT
+========================================================= */
+
+function Notifications({
+  adminMode = false,
+}: NotificationsProps) {
+  const [role, setRole] = useState<UserRole>(() =>
+    adminMode ? "admin" : getUserRole(),
+  );
+
   const [notifications, setNotifications] = useState<
     NotificationItem[]
   >([]);
+
   const [loaded, setLoaded] = useState(false);
   const [filter, setFilter] = useState<FilterType>("all");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -298,18 +478,27 @@ function Notifications() {
   const filterRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Load the notifications belonging to the current role.
+  /* ---------------------------------------------------------
+     LOAD ROLE-SPECIFIC NOTIFICATIONS
+  --------------------------------------------------------- */
+
   useEffect(() => {
     function loadNotifications() {
-      const currentRole = getUserRole();
+      // Admin route always uses admin notifications.
+      // Patient and doctor routes continue using userRole.
+      const currentRole: UserRole = adminMode
+        ? "admin"
+        : getUserRole();
+
       const storageKey = getStorageKey(currentRole);
       const initialData = getInitialNotifications(currentRole);
 
-      setRole(currentRole);
       setLoaded(false);
+      setRole(currentRole);
       setFilter("all");
       setMenuId(null);
       setClearConfirm(false);
+      setFilterOpen(false);
 
       try {
         const saved = localStorage.getItem(storageKey);
@@ -325,7 +514,12 @@ function Notifications() {
         } else {
           setNotifications(initialData);
         }
-      } catch {
+      } catch (error) {
+        console.error(
+          "Unable to load notifications:",
+          error,
+        );
+
         setNotifications(initialData);
       } finally {
         setLoaded(true);
@@ -334,31 +528,61 @@ function Notifications() {
 
     loadNotifications();
 
-    // Support role changes and login/logout in the same tab.
-    window.addEventListener("authChange", loadNotifications);
-    window.addEventListener("storage", loadNotifications);
+    function handleAuthChange() {
+      loadNotifications();
+    }
+
+    function handleStorageChange(event: StorageEvent) {
+      if (
+        event.key === null ||
+        event.key === getStorageKey(
+          adminMode ? "admin" : getUserRole(),
+        )
+      ) {
+        loadNotifications();
+      }
+    }
+
+    window.addEventListener("authChange", handleAuthChange);
+    window.addEventListener("storage", handleStorageChange);
 
     return () => {
-      window.removeEventListener("authChange", loadNotifications);
-      window.removeEventListener("storage", loadNotifications);
-    };
-  }, []);
+      window.removeEventListener(
+        "authChange",
+        handleAuthChange,
+      );
 
-  // Save changes only after notifications have loaded.
+      window.removeEventListener(
+        "storage",
+        handleStorageChange,
+      );
+    };
+  }, [adminMode]);
+
+  /* ---------------------------------------------------------
+     SAVE NOTIFICATIONS
+  --------------------------------------------------------- */
+
   useEffect(() => {
     if (!loaded) return;
 
     try {
       localStorage.setItem(
         getStorageKey(role),
-        JSON.stringify(notifications)
+        JSON.stringify(notifications),
       );
-    } catch {
-      console.error("Unable to save notifications.");
+    } catch (error) {
+      console.error(
+        "Unable to save notifications:",
+        error,
+      );
     }
   }, [notifications, loaded, role]);
 
-  // Close dropdowns when clicking outside.
+  /* ---------------------------------------------------------
+     CLOSE DROPDOWNS ON OUTSIDE CLICK
+  --------------------------------------------------------- */
+
   useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
       const target = event.target as Node;
@@ -378,29 +602,39 @@ function Notifications() {
       }
     }
 
-    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick,
+    );
 
     return () => {
       document.removeEventListener(
         "mousedown",
-        handleOutsideClick
+        handleOutsideClick,
       );
     };
   }, []);
 
-  const isDoctor = role === "doctor";
+  /* ---------------------------------------------------------
+     ROLE-SPECIFIC SETTINGS
+  --------------------------------------------------------- */
 
-  const dashboardLink = isDoctor
-    ? "/doctor-dashboard"
-    : "/patient-dashboard";
+  const isDoctor = role === "doctor";
+  const isAdmin = role === "admin";
+
+  const dashboardLink = isAdmin
+    ? "/admin-dashboard"
+    : isDoctor
+      ? "/doctor-dashboard"
+      : "/patient-dashboard";
 
   const unreadCount = notifications.filter(
-    (item) => !item.read
+    (item) => !item.read,
   ).length;
 
   const selectedFilter =
     filterOptions.find(
-      (option) => option.value === filter
+      (option) => option.value === filter,
     )?.label ?? "All notifications";
 
   const filteredNotifications = notifications.filter(
@@ -424,14 +658,20 @@ function Notifications() {
         default:
           return true;
       }
-    }
+    },
   );
+
+  /* ---------------------------------------------------------
+     NOTIFICATION ACTIONS
+  --------------------------------------------------------- */
 
   function markAsRead(id: number) {
     setNotifications((previous) =>
       previous.map((item) =>
-        item.id === id ? { ...item, read: true } : item
-      )
+        item.id === id
+          ? { ...item, read: true }
+          : item,
+      ),
     );
 
     setMenuId(null);
@@ -442,8 +682,8 @@ function Notifications() {
       previous.map((item) =>
         item.id === id
           ? { ...item, read: !item.read }
-          : item
-      )
+          : item,
+      ),
     );
 
     setMenuId(null);
@@ -451,7 +691,7 @@ function Notifications() {
 
   function deleteNotification(id: number) {
     setNotifications((previous) =>
-      previous.filter((item) => item.id !== id)
+      previous.filter((item) => item.id !== id),
     );
 
     setMenuId(null);
@@ -462,7 +702,7 @@ function Notifications() {
       previous.map((item) => ({
         ...item,
         read: true,
-      }))
+      })),
     );
   }
 
@@ -471,67 +711,200 @@ function Notifications() {
     setClearConfirm(false);
   }
 
+  /* ---------------------------------------------------------
+     LOADING STATE
+     AdminLayout already supplies admin navbar and sidebar.
+  --------------------------------------------------------- */
+
   if (!loaded) {
     return (
-      <div className="min-h-screen bg-[#f8faf9]">
-        <Navbar />
+      <div
+        className={`min-h-screen bg-[#f8faf9] ${
+          adminMode ? "p-4 sm:p-7 lg:p-9" : ""
+        }`}
+      >
+        {!adminMode && <Navbar />}
+
         <div className="mx-auto max-w-5xl px-4 py-16 text-center text-sm text-slate-500">
           Loading notifications...
         </div>
-        <Footer />
+
+        {!adminMode && <Footer />}
       </div>
     );
   }
 
+  /* ---------------------------------------------------------
+     MAIN UI
+  --------------------------------------------------------- */
+
   return (
-    <div className="min-h-screen overflow-x-clip bg-[#f8faf9] text-slate-800">
-      <Navbar />
+    <div className="min-h-screen w-full min-w-0 overflow-x-clip bg-[#f8faf9] text-slate-800">
+      {/* Patient and doctor keep their existing navbar.
+          Admin navbar is provided by AdminLayout. */}
+      {!adminMode && <Navbar />}
 
-      <main className="mx-auto min-h-[70vh] w-full max-w-5xl px-3 py-24 sm:px-6 sm:py-24 lg:px-8">
-        {/* Header */}
-        <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0B63CE]">
-              <Bell size={22} />
-            </div>
+      <main
+  className={`mx-auto min-h-[70vh] w-full ${
+    adminMode
+      ? "max-w-[1200px] space-y-7 p-4 sm:p-7 lg:p-9"
+      : "max-w-5xl px-3 py-24 sm:px-6 sm:py-24 lg:px-8"
+  }`}
+>
+        {/* PAGE HEADER */}
+        {/* PAGE HEADER */}
+<div
+  className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${
+    adminMode ? "" : "mb-6 sm:mb-8"
+  }`}
+>
+  {/* Left Side: Breadcrumb + Heading + Description */}
+  <div className="flex min-w-0 items-start gap-3">
+    
 
-            <div className="min-w-0">
-              <h1 className="text-xl font-bold text-slate-900 sm:text-2xl lg:text-3xl">
-                Notifications
-              </h1>
+    <div className="min-w-0">
+      
+{isAdmin && (
 
-              <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
-                {isDoctor
-                  ? "Stay updated on your appointments and consultations."
-                  : "Stay updated on your healthcare activities."}
-              </p>
+  <div className="mb-2 flex flex-wrap items-center gap-2 text-xs font-medium">
+    <Link
+      to="/admin-dashboard"
+      className="flex items-center gap-1.5 text-slate-500 transition hover:text-[#0B63CE]"
+    >
+      <Home size={15} />
+      Dashboard
+    </Link>
+<ChevronRight size={15} className="text-slate-400" />
 
-              {unreadCount > 0 && (
-                <p className="mt-1.5 text-xs font-medium text-[#0B63CE] sm:text-sm">
-                  {unreadCount} unread{" "}
-                  {unreadCount === 1
-                    ? "notification"
-                    : "notifications"}
-                </p>
-              )}
-            </div>
-          </div>
+<span className="font-semibold text-[#0B63CE]">
+  Notifications
+</span>
+  </div>
+)}
 
-          {unreadCount > 0 && (
-            <button
-              type="button"
-              onClick={markAllAsRead}
-              className="inline-flex w-fit items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-[#0B63CE] transition hover:bg-blue-50 sm:text-sm"
+
+      {/* Heading */}
+      <h1 className="text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
+        Notifications
+      </h1>
+
+      {/* Description */}
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+        {isAdmin
+          ? "Stay updated on patients, doctors, appointments, and platform activity."
+          : isDoctor
+            ? "Stay updated on your appointments and consultations."
+            : "Stay updated on your healthcare activities."}
+      </p>
+
+      {/* Unread Count */}
+      {unreadCount > 0 && (
+        <p className="mt-1.5 text-xs font-medium text-[#0B63CE] sm:text-sm">
+          {unreadCount} unread{" "}
+          {unreadCount === 1
+            ? "notification"
+            : "notifications"}
+        </p>
+      )}
+    </div>
+  </div>
+
+  {/* Right Side: Unread Notifications Card for Admin */}
+  {isAdmin ? (
+    <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-[#0B63CE]">
+        <Bell size={21} />
+      </div>
+
+      <div>
+        <p className="text-xs font-medium text-slate-400">
+          Total Notifications
+        </p>
+
+        <p className="mt-1 text-sm font-extrabold text-[#183b3b]">
+          {notifications.length} total
+        </p>
+      </div>
+    </div>
+  ) : (
+    unreadCount > 0 && (
+      <button
+        type="button"
+        onClick={markAllAsRead}
+        className="inline-flex w-fit shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-[#0B63CE] transition hover:bg-blue-50 sm:text-sm"
+      >
+        <CheckCheck size={17} />
+        Mark all as read
+      </button>
+    )
+  )}
+</div>
+
+        {/* ADMIN QUICK LINKS */}
+        {isAdmin && (
+          <div className="mb-6 grid gap-3 sm:grid-cols-3">
+            <Link
+              to="/admin-dashboard"
+              className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-200 hover:shadow-md"
             >
-              <CheckCheck size={17} />
-              Mark all as read
-            </button>
-          )}
-        </div>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0B63CE]">
+                <ShieldCheck size={20} />
+              </div>
 
-        {/* Notifications container */}
+              <div>
+                <p className="text-sm font-semibold text-slate-800">
+                  Admin Dashboard
+                </p>
+
+                <p className="mt-1 text-xs text-slate-500">
+                  View overview
+                </p>
+              </div>
+            </Link>
+
+            <Link
+              to="/manage-doctors"
+              className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-200 hover:shadow-md"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                <Stethoscope size={20} />
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-slate-800">
+                  Manage Doctors
+                </p>
+
+                <p className="mt-1 text-xs text-slate-500">
+                  Doctor profiles
+                </p>
+              </div>
+            </Link>
+
+            <Link
+              to="/manage-patients"
+              className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-200 hover:shadow-md"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                <Users size={20} />
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-slate-800">
+                  Manage Patients
+                </p>
+
+                <p className="mt-1 text-xs text-slate-500">
+                  Patient accounts
+                </p>
+              </div>
+            </Link>
+          </div>
+        )}
+
+        {/* NOTIFICATIONS CONTAINER */}
         <section className="relative w-full min-w-0 rounded-xl border border-slate-200 bg-white shadow-sm sm:rounded-2xl">
-          {/* Toolbar */}
+          {/* TOOLBAR */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-3 py-4 sm:px-5 lg:px-6">
             <div className="min-w-0">
               <h2 className="text-sm font-semibold text-slate-900 sm:text-base">
@@ -543,8 +916,11 @@ function Notifications() {
               </p>
             </div>
 
-            {/* Filter dropdown */}
-            <div className="relative shrink-0" ref={filterRef}>
+            {/* FILTER DROPDOWN */}
+            <div
+              className="relative shrink-0"
+              ref={filterRef}
+            >
               <button
                 type="button"
                 aria-haspopup="listbox"
@@ -558,7 +934,9 @@ function Notifications() {
                     : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                 }`}
               >
-                <span className="truncate">{selectedFilter}</span>
+                <span className="truncate">
+                  {selectedFilter}
+                </span>
 
                 <ChevronDown
                   size={15}
@@ -593,7 +971,10 @@ function Notifications() {
                       <span>{option.label}</span>
 
                       {filter === option.value && (
-                        <Check size={15} className="shrink-0" />
+                        <Check
+                          size={15}
+                          className="shrink-0"
+                        />
                       )}
                     </button>
                   ))}
@@ -602,7 +983,7 @@ function Notifications() {
             </div>
           </div>
 
-          {/* Notification list */}
+          {/* NOTIFICATION LIST */}
           {filteredNotifications.length > 0 ? (
             <div className="divide-y divide-slate-100">
               {filteredNotifications.map((notification) => {
@@ -617,16 +998,19 @@ function Notifications() {
                         : "bg-blue-50/40 hover:bg-blue-50/70"
                     }`}
                   >
-                    {/* Icon */}
+                    {/* ICON */}
                     <div
                       className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-12 sm:w-12 ${getIconStyle(
-                        notification.type
+                        notification.type,
                       )}`}
                     >
-                      <Icon size={20} strokeWidth={1.8} />
+                      <Icon
+                        size={20}
+                        strokeWidth={1.8}
+                      />
                     </div>
 
-                    {/* Text */}
+                    {/* NOTIFICATION TEXT */}
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                         <h3
@@ -660,7 +1044,7 @@ function Notifications() {
                         <Link
                           to={getActionLink(
                             notification.type,
-                            role
+                            role,
                           )}
                           onClick={() =>
                             markAsRead(notification.id)
@@ -669,13 +1053,13 @@ function Notifications() {
                         >
                           {getActionText(
                             notification.type,
-                            role
+                            role,
                           )}
                         </Link>
                       </div>
                     </div>
 
-                    {/* Options */}
+                    {/* OPTIONS */}
                     <div
                       className="relative shrink-0"
                       ref={
@@ -694,7 +1078,7 @@ function Notifications() {
                           setMenuId((current) =>
                             current === notification.id
                               ? null
-                              : notification.id
+                              : notification.id,
                           )
                         }
                         className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 sm:h-9 sm:w-9"
@@ -765,7 +1149,7 @@ function Notifications() {
             </div>
           )}
 
-          {/* Bottom actions */}
+          {/* BOTTOM ACTIONS */}
           {notifications.length > 0 && (
             <div className="flex flex-col gap-3 border-t border-slate-100 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4 lg:px-6">
               <p className="text-[11px] text-slate-400 sm:text-xs">
@@ -785,6 +1169,7 @@ function Notifications() {
           )}
         </section>
 
+        {/* BACK TO DASHBOARD */}
         <div className="mt-5">
           <Link
             to={dashboardLink}
@@ -795,9 +1180,11 @@ function Notifications() {
         </div>
       </main>
 
-      <Footer />
+      {/* Patient and doctor retain their footer.
+          Admin pages use AdminLayout instead. */}
+      {!adminMode && <Footer />}
 
-      {/* Confirmation modal */}
+      {/* CLEAR CONFIRMATION MODAL */}
       {clearConfirm && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 px-4 py-6"

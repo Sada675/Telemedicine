@@ -27,6 +27,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ManageDoctors from "./pages/ManageDoctors";
 import ManagePatients from "./pages/ManagePatients";
 import ManageAppointments from "./pages/ManageAppointments";
+import AdminSettings from "./pages/AdminSettings";
 
 
 function App() {
@@ -60,6 +61,11 @@ function App() {
       <Route path="/manage-doctors" element={<ManageDoctors />} />
       <Route path="/manage-patients" element={<ManagePatients />} />
       <Route path="/manage-appointments" element={<ManageAppointments />}/>
+      <Route
+    path="/admin-notifications"
+    element={<Notifications adminMode={true} />}
+  />
+      <Route path="/admin-settings" element={<AdminSettings />}/>
       </Route>
       
 

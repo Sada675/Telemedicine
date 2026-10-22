@@ -837,7 +837,7 @@ function AdminDashboard() {
     htmlFor="appointments-rows-per-page"
     className="whitespace-nowrap text-[11px] text-slate-500"
   >
-    Rows per page:
+    Result per page:
   </label>
 
 {/* Dropdown options */}
@@ -855,12 +855,12 @@ className="w-[85px] rounded-lg border border-slate-200 bg-white px-2 py-2 text-x
 
 >
 
-<option value="3">3 rows</option>
+<option value="3">3</option>
 
-<option value="5">5 rows</option>
-<option value="10">10 rows</option>
-<option value="20">20 rows</option>
-<option value="custom">Custom</option>
+<option value="5">5</option>
+<option value="10">10</option>
+<option value="20">20</option>
+
 
   </select>
 
